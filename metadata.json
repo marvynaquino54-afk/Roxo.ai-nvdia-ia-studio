@@ -1,0 +1,11 @@
+{
+  "name": "roxo.ia — Terminal de Análise Probabilística & IA",
+  "description": "Plataforma profissional de análise quantitativa e probabilística para opções binárias, forex e criptoativos com IA preditiva, gestão de banca e sincronização na nuvem.",
+  "requestFramePermissions": [
+    "camera",
+    "display-capture"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
