@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TradeRecord } from '../types';
 import { cloudStorage } from '../services/firebase';
+import { geminiService } from '../services/geminiService';
 import { Sparkles, Plus, Award, AlertCircle, FileText, CheckCircle2, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface AIReportsTabProps {
@@ -59,18 +60,13 @@ export const AIReportsTab: React.FC<AIReportsTabProps> = ({ bankroll, payout }) 
     if (trades.length === 0) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/gemini/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionData: trades.slice(0, 20),
-          bankroll,
-          totalOps: totalTrades,
-          winRate,
-          profitLoss: totalPnL.toFixed(2),
-        }),
+      const data = await geminiService.generateReport({
+        sessionData: trades.slice(0, 20),
+        bankroll,
+        totalOps: totalTrades,
+        winRate,
+        profitLoss: totalPnL.toFixed(2),
       });
-      const data = await res.json();
       setReport(data);
     } catch (err: any) {
       console.error(err);

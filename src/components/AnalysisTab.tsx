@@ -3,6 +3,7 @@ import { Candle, Setup, MarketType, FilterConfig, AIAnalysisResult } from '../ty
 import { CRYPTO_SYMBOLS, FOREX_SYMBOLS, EQUITIES_SYMBOLS, fetchMarketCandles } from '../services/marketApi';
 import { evaluateSetupProbabilities, checkFilters } from '../services/probabilityEngine';
 import { Indicators, analyzePatterns } from '../services/indicators';
+import { geminiService } from '../services/geminiService';
 import { Sparkles, ArrowUpRight, ArrowDownRight, RefreshCw, AlertTriangle, CheckCircle2, TrendingUp, Layers } from 'lucide-react';
 
 interface AnalysisTabProps {
@@ -19,6 +20,7 @@ interface AnalysisTabProps {
   setTimeframe: (tf: string) => void;
   marketType: MarketType;
   setMarketType: (m: MarketType) => void;
+  onNavigateToConnections?: () => void;
 }
 
 export const AnalysisTab: React.FC<AnalysisTabProps> = ({
@@ -35,6 +37,7 @@ export const AnalysisTab: React.FC<AnalysisTabProps> = ({
   setTimeframe,
   marketType,
   setMarketType,
+  onNavigateToConnections,
 }) => {
   const [loading, setLoading] = useState(false);
   const [customSymbol, setCustomSymbol] = useState('');
@@ -207,7 +210,7 @@ export const AnalysisTab: React.FC<AnalysisTabProps> = ({
     }
   }, [candles]);
 
-  // Request AI Analysis from Server
+  // Request AI Analysis via resilient Gemini Service
   const handleQueryAI = async () => {
     if (candles.length === 0) return;
     setAiLoading(true);
@@ -218,28 +221,23 @@ export const AnalysisTab: React.FC<AnalysisTabProps> = ({
       const macd = Indicators.macd(closes).hist[candles.length - 1] ?? 0;
       const atr = Indicators.atr(candles)[candles.length - 1] ?? 0;
 
-      const res = await fetch('/api/gemini/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          symbol,
-          timeframe,
-          probability: Math.round(analysis.prob * 100),
-          score: analysis.score,
-          ev: analysis.ev,
-          indicators: {
-            rsi: rsi.toFixed(1),
-            macdHist: macd.toFixed(4),
-            atr: atr.toFixed(4),
-            currentPrice: cur.c,
-          },
-          setupName: activeSetup.name,
-          rulesStatus: `${analysis.satisfiedCount} regras satisfeitas, ${analysis.violatedCount} contrárias`,
-          payout,
-        }),
+      const data = await geminiService.analyzeEntry({
+        symbol,
+        timeframe,
+        probability: Math.round(analysis.prob * 100),
+        score: analysis.score,
+        ev: analysis.ev,
+        indicators: {
+          rsi: rsi.toFixed(1),
+          macdHist: macd.toFixed(4),
+          atr: atr.toFixed(4),
+          currentPrice: cur.c,
+        },
+        setupName: activeSetup.name,
+        rulesStatus: `${analysis.satisfiedCount} regras satisfeitas, ${analysis.violatedCount} contrárias`,
+        payout,
       });
 
-      const data = await res.json();
       setAiAnalysis(data);
     } catch (err: any) {
       console.error(err);
@@ -529,8 +527,16 @@ export const AnalysisTab: React.FC<AnalysisTabProps> = ({
                   </div>
                 )}
                 {aiAnalysis.riskWarning && (
-                  <div className="text-[10px] text-amber-300/90 bg-amber-500/10 p-1.5 rounded border border-amber-500/20">
-                    ⚠️ {aiAnalysis.riskWarning}
+                  <div className="text-[10px] text-amber-300/90 bg-amber-500/10 p-2 rounded-xl border border-amber-500/20 space-y-1">
+                    <div>⚠️ {aiAnalysis.riskWarning}</div>
+                    {!aiAnalysis.aiPowered && onNavigateToConnections && (
+                      <button
+                        onClick={onNavigateToConnections}
+                        className="text-[11px] font-bold text-fuchsia-300 hover:text-white underline block pt-0.5"
+                      >
+                        Clique aqui para conectar sua chave Gemini na aba Conexão ↗
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

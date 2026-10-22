@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Setup } from '../types';
 import { Indicators } from '../services/indicators';
 import { wilsonInterval } from '../services/probabilityEngine';
-import { Server, Radio, Volume2, Download, Upload, Activity, Github, Globe, CheckCircle2, XCircle, AlertCircle, Play } from 'lucide-react';
+import { geminiService } from '../services/geminiService';
+import { Server, Radio, Volume2, Download, Upload, Activity, Github, Globe, CheckCircle2, XCircle, AlertCircle, Play, Sparkles, Key, Check } from 'lucide-react';
 
 interface ConnectionsTabProps {
   activeSetup: Setup;
@@ -23,6 +24,46 @@ export const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
   const [diagResults, setDiagResults] = useState<{ name: string; ok: boolean; msg: string }[] | null>(null);
+  const [geminiKeyInput, setGeminiKeyInput] = useState(() => geminiService.getStoredKey());
+  const [geminiStatus, setGeminiStatus] = useState<{ ok: boolean; msg: string } | null>(() => {
+    const k = geminiService.getStoredKey();
+    return k ? { ok: true, msg: 'Chave salva e ativa no navegador' } : null;
+  });
+  const [testingGemini, setTestingGemini] = useState(false);
+
+  const handleSaveAndTestGemini = async () => {
+    const key = geminiKeyInput.trim();
+    if (!key) {
+      geminiService.setStoredKey('');
+      setGeminiStatus({ ok: false, msg: 'Chave removida. O app usará o motor estatístico local.' });
+      return;
+    }
+    setTestingGemini(true);
+    setGeminiStatus(null);
+    geminiService.setStoredKey(key);
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Responda com a palavra OK' }] }],
+        }),
+      });
+
+      if (res.ok) {
+        setGeminiStatus({ ok: true, msg: 'Conectado com Sucesso! IA Gemini 3.8 / 2.5 Flash Ativa!' });
+      } else {
+        const err = await res.text();
+        setGeminiStatus({ ok: false, msg: `Erro da Google API: ${err.slice(0, 100)}` });
+      }
+    } catch (e: any) {
+      setGeminiStatus({ ok: false, msg: `Falha na conexão: ${e.message}` });
+    } finally {
+      setTestingGemini(false);
+    }
+  };
 
   // Test Market Feed
   const handleTestFeed = async () => {
@@ -173,6 +214,67 @@ export const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Gemini AI Key Configuration Banner */}
+      <div className="bg-gradient-to-r from-violet-900/60 via-fuchsia-950/50 to-black/70 border border-fuchsia-500/30 rounded-2xl p-5 shadow-2xl space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-violet-500/20">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-fuchsia-500/20 flex items-center justify-center text-fuchsia-300">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-extrabold text-sm text-white uppercase tracking-wide block">
+                Conectar Inteligência Artificial (Google Gemini)
+              </span>
+              <span className="text-xs text-violet-300/80">
+                Ative a IA para obter confluências na próxima vela, conselhos de volatilidade e relatórios automáticos.
+              </span>
+            </div>
+          </div>
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-fuchsia-300 hover:text-white underline font-semibold flex items-center gap-1"
+          >
+            Obter chave gratuita no Google AI Studio ↗
+          </a>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[280px]">
+            <Key className="w-4 h-4 text-violet-400 absolute left-3 top-2.5" />
+            <input
+              type="password"
+              placeholder="Cole sua chave aqui (AIzaSy...)"
+              value={geminiKeyInput}
+              onChange={(e) => setGeminiKeyInput(e.target.value)}
+              className="w-full bg-black/60 border border-violet-500/30 rounded-xl pl-9 pr-3 py-2 text-xs font-mono text-white outline-none focus:border-fuchsia-400"
+            />
+          </div>
+          <button
+            onClick={handleSaveAndTestGemini}
+            disabled={testingGemini}
+            className="py-2 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:opacity-95 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Check className="w-3.5 h-3.5" />
+            <span>{testingGemini ? 'Testando Conexão...' : 'Salvar & Ativar IA'}</span>
+          </button>
+        </div>
+
+        {geminiStatus && (
+          <div
+            className={`p-2.5 rounded-xl border text-xs flex items-center gap-2 ${
+              geminiStatus.ok
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+            }`}
+          >
+            {geminiStatus.ok ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+            <span className="font-semibold">{geminiStatus.msg}</span>
+          </div>
+        )}
       </div>
 
       {/* Grid: Feeds & Automations */}

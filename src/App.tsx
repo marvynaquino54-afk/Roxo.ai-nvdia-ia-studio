@@ -209,6 +209,7 @@ export default function App() {
             setTimeframe={setTimeframe}
             marketType={marketType}
             setMarketType={setMarketType}
+            onNavigateToConnections={() => setActiveTab('conexao')}
           />
         )}
 
