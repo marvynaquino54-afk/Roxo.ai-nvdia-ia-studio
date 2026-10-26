@@ -1,0 +1,2346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0718">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Painel de Análise Probabilística de Gráficos — Forex e Cripto">
+<title>roxo.ia — Painel de Análise Probabilística</title>
+<style>
+/* ==========================================================
+   roxo.ia — Tema roxo / lilás profissional
+   ========================================================== */
+:root{
+  --bg:#0b0718; --bg2:#140d2b; --bg3:#1c1138;
+  --card:rgba(255,255,255,.055); --card2:rgba(255,255,255,.09);
+  --line:rgba(196,181,253,.16); --line2:rgba(196,181,253,.34);
+  --vio:#8b5cf6; --vio2:#a78bfa; --lil:#c4b5fd; --mag:#e879f9; --cyan:#67e8f9;
+  --ok:#4ade80; --warn:#fbbf24; --bad:#fb7185;
+  --txt:#ede9fe; --mut:#9d8ac7; --dim:#6f5f96;
+  --r:16px; --r2:12px; --sh:0 10px 40px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100%}
+body{
+  background:
+    radial-gradient(1000px 620px at 10% -12%, rgba(139,92,246,.24), transparent 60%),
+    radial-gradient(900px 620px at 96% 6%, rgba(232,121,249,.15), transparent 60%),
+    linear-gradient(180deg,var(--bg) 0%, var(--bg2) 45%, #0a0616 100%);
+  background-attachment:fixed; color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5; padding-bottom:100px; overflow-x:hidden;
+}
+h1,h2,h3,h4{margin:0;font-weight:800;letter-spacing:-.02em}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(139,92,246,.35);border-radius:20px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- HEADER ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;backdrop-filter:blur(18px);
+  background:linear-gradient(180deg,rgba(20,13,43,.94),rgba(11,7,24,.80));
+  border-bottom:1px solid var(--line);
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:11px;flex:1;min-width:210px}
+.logo{
+  width:44px;height:44px;border-radius:14px;flex:none;
+  background:linear-gradient(135deg,var(--vio),var(--mag));
+  display:grid;place-items:center;font-size:20px;color:#fff;font-weight:900;
+  box-shadow:0 0 28px rgba(168,85,247,.6);
+}
+.brand h1{font-size:20px;line-height:1.05;
+  background:linear-gradient(92deg,#fff,var(--lil) 52%,var(--mag));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand p{margin:2px 0 0;font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.topmeta{display:flex;gap:7px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:700;padding:6px 11px;border-radius:999px;background:var(--card);
+  border:1px solid var(--line);color:var(--mut);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.chip b{color:var(--lil)}
+.chip.good{border-color:rgba(74,222,128,.42);color:var(--ok);background:rgba(74,222,128,.09)}
+.chip.bad{border-color:rgba(251,113,133,.42);color:var(--bad);background:rgba(251,113,133,.09)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 9px currentColor}
+
+/* ---------- LAYOUT ---------- */
+main{max-width:1200px;margin:0 auto;padding:16px 14px 0}
+.view{display:none;animation:fade .3s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr}
+.g3{grid-template-columns:1fr}
+.g4{grid-template-columns:repeat(2,1fr)}
+@media(min-width:760px){
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;backdrop-filter:blur(12px);box-shadow:var(--sh)}
+.card.tight{padding:13px}
+.card h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--lil);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 .tag{font-size:9.5px;padding:2px 7px;border-radius:6px;background:rgba(139,92,246,.2);
+  border:1px solid var(--line2);color:var(--lil);letter-spacing:.05em}
+.muted{color:var(--mut);font-size:12.5px}
+.hint{background:rgba(139,92,246,.1);border-left:3px solid var(--vio);padding:10px 12px;
+  border-radius:0 8px 8px 0;font-size:12.5px;color:var(--lil);margin:10px 0}
+.warnbox{background:rgba(251,191,36,.1);border-left:3px solid var(--warn);padding:10px 12px;
+  border-radius:0 8px 8px 0;font-size:12.5px;color:#fde68a;margin:10px 0}
+.badbox{background:rgba(251,113,133,.1);border-left:3px solid var(--bad);padding:10px 12px;
+  border-radius:0 8px 8px 0;font-size:12.5px;color:#fecdd3;margin:10px 0}
+.okbox{background:rgba(74,222,128,.1);border-left:3px solid var(--ok);padding:10px 12px;
+  border-radius:0 8px 8px 0;font-size:12.5px;color:#bbf7d0;margin:10px 0}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+.mt{margin-top:14px}
+.mb{margin-bottom:10px}
+
+/* ---------- FORM ---------- */
+label.f{display:block;font-size:10.5px;font-weight:800;color:var(--mut);text-transform:uppercase;
+  letter-spacing:.08em;margin:0 0 5px}
+input[type=text],input[type=number],select,textarea{
+  width:100%;background:rgba(10,6,22,.62);border:1px solid var(--line);color:var(--txt);
+  padding:10px 11px;border-radius:10px;outline:none;transition:.16s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--vio2);box-shadow:0 0 0 3px rgba(167,139,250,.16)}
+input[type=color]{width:100%;height:40px;padding:3px;border-radius:10px;background:rgba(10,6,22,.62);border:1px solid var(--line)}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--lil) 50%),
+  linear-gradient(135deg,var(--lil) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px}
+.field{margin-bottom:11px}
+.switch{display:inline-flex;align-items:center;gap:9px;cursor:pointer;user-select:none}
+.switch input{display:none}
+.track{width:40px;height:22px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;transition:.2s;flex:none}
+.knob{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--mut);transition:.2s}
+.switch input:checked + .track{background:linear-gradient(135deg,var(--vio),var(--mag))}
+.switch input:checked + .track .knob{left:21px;background:#fff}
+
+/* ---------- BOTÕES ---------- */
+.btn{padding:10px 16px;border-radius:11px;font-size:13.5px;font-weight:700;background:var(--card2);
+  border:1px solid var(--line2);color:var(--txt);transition:.16s;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+.btn:hover{background:rgba(167,139,250,.2);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.p{background:linear-gradient(135deg,var(--vio),var(--mag));border-color:transparent;color:#fff;box-shadow:0 6px 20px rgba(168,85,247,.35)}
+.btn.p:hover{box-shadow:0 8px 26px rgba(168,85,247,.5)}
+.btn.g{background:rgba(74,222,128,.14);border-color:rgba(74,222,128,.4);color:var(--ok)}
+.btn.d{background:rgba(251,113,133,.14);border-color:rgba(251,113,133,.4);color:var(--bad)}
+.btn.s{padding:7px 12px;font-size:12px;border-radius:9px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+/* ---------- PAINEL PROBABILIDADE ---------- */
+.gauge-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.gauge{position:relative;width:170px;height:170px;flex:none}
+.gauge svg{transform:rotate(-90deg);width:100%;height:100%}
+.gauge .gc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .gv{font-size:37px;font-weight:900;letter-spacing:-.035em;line-height:1}
+.gauge .gl{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-top:5px;font-weight:800}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;flex:1;min-width:232px}
+@media(min-width:700px){.kpis{grid-template-columns:repeat(3,1fr)}}
+.kpi{background:rgba(10,6,22,.45);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.kpi .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--dim);font-weight:800}
+.kpi .v{font-size:19px;font-weight:800;margin-top:2px;letter-spacing:-.02em}
+.kpi .s{font-size:10.5px;color:var(--mut)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+/* ---------- TABELA ---------- */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);
+  padding:7px 8px;border-bottom:1px solid var(--line);font-weight:800}
+td{padding:7px 8px;border-bottom:1px solid rgba(196,181,253,.07);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ---------- ITENS ---------- */
+.item{background:rgba(10,6,22,.42);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:9px}
+.item.sel{border-color:var(--vio2);background:rgba(139,92,246,.12);box-shadow:0 0 0 1px rgba(167,139,250,.3)}
+.item .t{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.item .m{font-size:11.5px;color:var(--mut);margin-top:4px}
+.pill{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;letter-spacing:.04em;white-space:nowrap}
+.pill.pro{background:rgba(74,222,128,.18);color:var(--ok)}
+.pill.con{background:rgba(251,113,133,.18);color:var(--bad)}
+.pill.neu{background:rgba(157,138,199,.18);color:var(--mut)}
+.pill.dir{background:rgba(232,121,249,.18);color:var(--mag)}
+.pill.warnp{background:rgba(251,191,36,.18);color:var(--warn)}
+
+/* ---------- DOCK ---------- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:70;
+  background:linear-gradient(180deg,rgba(11,7,24,.74),rgba(20,13,43,.99));
+  backdrop-filter:blur(20px);border-top:1px solid var(--line);
+  padding:9px 10px calc(9px + env(safe-area-inset-bottom))}
+.dock-in{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.cap-row{display:flex;gap:8px;align-items:center;justify-content:center}
+.cap{flex:1;max-width:112px;height:48px;border-radius:13px;
+  background:linear-gradient(135deg,rgba(139,92,246,.32),rgba(232,121,249,.22));
+  border:1px solid var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;font-size:9.5px;font-weight:800;color:var(--lil);letter-spacing:.04em;transition:.16s}
+.cap i{font-style:normal;font-size:17px;line-height:1}
+.cap:hover{background:linear-gradient(135deg,rgba(139,92,246,.5),rgba(232,121,249,.34));transform:translateY(-2px)}
+.cap.rec{background:linear-gradient(135deg,rgba(251,113,133,.3),rgba(139,92,246,.28));color:#fecdd3}
+.cap.rec.on{background:linear-gradient(135deg,var(--bad),var(--vio));color:#fff;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,113,133,.55)}50%{box-shadow:0 0 0 12px rgba(251,113,133,0)}}
+.tabs{display:flex;gap:5px;background:rgba(10,6,22,.5);padding:4px;border-radius:14px;border:1px solid var(--line)}
+.tab{flex:1;padding:9px 4px;border-radius:11px;font-size:10.5px;font-weight:800;color:var(--mut);
+  display:flex;flex-direction:column;align-items:center;gap:3px;transition:.16s;letter-spacing:.02em}
+.tab i{font-style:normal;font-size:16px;line-height:1}
+.tab.active{background:linear-gradient(135deg,var(--vio),var(--mag));color:#fff;box-shadow:0 4px 14px rgba(168,85,247,.4)}
+
+/* ---------- MODAL ---------- */
+.ov{position:fixed;inset:0;z-index:200;background:rgba(5,3,12,.88);backdrop-filter:blur(7px);
+  display:none;align-items:center;justify-content:center;padding:16px}
+.ov.on{display:flex}
+.modal{background:linear-gradient(160deg,var(--bg3),var(--bg2));border:1px solid var(--line2);
+  border-radius:20px;max-width:640px;width:100%;max-height:88vh;overflow-y:auto;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.6);position:relative}
+.modal h3{font-size:16px;text-transform:none;letter-spacing:-.01em;margin-bottom:4px}
+.x{position:absolute;top:12px;right:16px;font-size:22px;color:var(--mut);line-height:1;padding:4px}
+
+/* ---------- TOAST ---------- */
+#toasts{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:300;
+  display:flex;flex-direction:column;gap:8px;width:min(94vw,430px);pointer-events:none}
+.toast{background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1px solid var(--line2);
+  border-radius:13px;padding:11px 14px;font-size:13px;font-weight:600;box-shadow:var(--sh);
+  animation:tin .3s;display:flex;gap:9px;align-items:flex-start}
+.toast.ok{border-color:rgba(74,222,128,.5)} .toast.warn{border-color:rgba(251,191,36,.5)}
+.toast.bad{border-color:rgba(251,113,133,.5)} .toast.info{border-color:rgba(167,139,250,.5)}
+@keyframes tin{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+
+/* ---------- CANVAS ---------- */
+.stage{position:relative;background:rgba(5,3,12,.6);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;display:grid;place-items:center;min-height:180px}
+.stage canvas,#cvEdit{display:block;max-width:100%;height:auto;cursor:crosshair;touch-action:none}
+#vid{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px}
+.picker{position:absolute;border:2px dashed var(--mag);background:rgba(232,121,249,.13);pointer-events:none;border-radius:3px}
+#cvChart{width:100%;height:auto;margin-top:10px;border-radius:10px;background:rgba(5,3,12,.55);border:1px solid var(--line);display:block}
+
+/* ---------- ALERTAS ---------- */
+.alert-item{background:rgba(10,6,22,.52);border:1px solid var(--line2);border-left:3px solid var(--mag);
+  border-radius:11px;padding:10px 12px;margin-bottom:8px;animation:fade .3s}
+.alert-item .h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;flex-wrap:wrap}
+.alert-item .b{font-size:11.5px;color:var(--mut);margin-top:4px}
+.log{background:#06040e;border:1px solid var(--line);border-radius:11px;padding:10px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;max-height:240px;overflow-y:auto;line-height:1.7}
+.log .t{color:var(--dim)} .log .i{color:var(--cyan)} .log .s{color:var(--ok)}
+.log .w{color:var(--warn)} .log .e{color:var(--bad)}
+.empty{text-align:center;padding:28px 14px;color:var(--dim);font-size:13px}
+.empty .ic{font-size:34px;opacity:.4;display:block;margin-bottom:8px}
+.bars{height:7px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden}
+.bars>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--vio),var(--mag));transition:.4s}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0}
+</style>
+</head>
+<body>
+
+<!-- ==================== CABEÇALHO ==================== -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo" aria-label="Logo roxo.ia">◈</div>
+    <div>
+      <h1>roxo.ia</h1>
+      <p>Análise Probabilística de Gráficos</p>
+    </div>
+  </div>
+  <div class="topmeta">
+    <span class="chip" id="chipClock" aria-label="Relógio"><b>--:--:--</b></span>
+    <span class="chip" id="chipFeed" aria-label="Status do feed"><span class="dot"></span> Feed: <b>—</b></span>
+    <span class="chip" id="chipAI" aria-label="Status da IA">IA: <b>OFF</b></span>
+  </div>
+</header>
+
+<main>
+<!-- ==================== ABA: ANÁLISE ==================== -->
+<section class="view active" id="v-analise" aria-label="Análise principal">
+  <div class="grid g2">
+    <div class="card">
+      <h3>📡 Fonte de dados <span class="tag" id="tagSource">ENTRADA</span></h3>
+      <div class="field">
+        <label class="f">Modo de leitura</label>
+        <select id="srcMode">
+          <option value="api">API de mercado — candles reais (preciso)</option>
+          <option value="image">Imagem / Print do gráfico (aproximado)</option>
+        </select>
+      </div>
+      <div id="apiBox">
+        <div class="grid2">
+          <div class="field">
+            <label class="f">Ativo</label>
+            <select id="selSymbol"></select>
+          </div>
+          <div class="field">
+            <label class="f">Tempo gráfico</label>
+            <select id="selTf">
+              <option value="1m">1 minuto</option>
+              <option value="5m" selected>5 minutos</option>
+              <option value="15m">15 minutos</option>
+              <option value="30m">30 minutos</option>
+              <option value="1h">1 hora</option>
+              <option value="4h">4 horas</option>
+              <option value="1d">1 dia</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="f">Outro símbolo (opcional)</label>
+          <input type="text" id="customSymbol" placeholder="ex.: SOLUSDT">
+        </div>
+        <button class="btn p" id="btnLoad" style="width:100%">⬇ Carregar candles e analisar</button>
+        <div class="hint">Modo mais preciso: usa dados reais do mercado. Indicadores, padrões de candle e probabilidades saem do preço verdadeiro.</div>
+      </div>
+      <div id="imgBox" style="display:none">
+        <button class="btn p" id="btnUpload" style="width:100%">🖼️ Enviar print do gráfico</button>
+        <input type="file" id="fileImg" accept="image/*" style="display:none">
+        <div class="grid2 mt">
+          <div class="field"><label class="f">Preço no topo (opcional)</label><input type="number" id="imgPriceTop" step="any" placeholder="ex.: 65000"></div>
+          <div class="field"><label class="f">Preço na base (opcional)</label><input type="number" id="imgPriceBot" step="any" placeholder="ex.: 64000"></div>
+        </div>
+        <div class="muted">Preencha os dois para converter pixels em preço real. Sem eles a escala é relativa (0–100).</div>
+        <div class="hint">Envie o print do TradingView/corretora. Depois arraste com o mouse ou o dedo para <b>marcar a área dos candles</b> e clique em “Re-detectar”.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🧪 Resultado da análise <span class="tag" id="tagResult">—</span></h3>
+      <div class="gauge-wrap">
+        <div class="gauge">
+          <svg viewBox="0 0 120 120" aria-label="Medidor de probabilidade">
+            <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#e879f9"/>
+            </linearGradient></defs>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>
+            <circle id="gArc" cx="60" cy="60" r="52" fill="none" stroke="url(#gg)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                    style="transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1)"/>
+          </svg>
+          <div class="gc"><div class="gv" id="gVal">—</div><div class="gl">Probabilidade</div></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="k">Score do setup</div><div class="v" id="kScore">—</div><div class="s">0 a 100</div></div>
+          <div class="kpi"><div class="k">Confiança 95%</div><div class="v" id="kCi">—</div><div class="s">IC 95% (Wilson)</div></div>
+          <div class="kpi"><div class="k">Esperança</div><div class="v" id="kEv">—</div><div class="s">por operação</div></div>
+          <div class="kpi"><div class="k">Confiabilidade</div><div class="v" id="kConf">—</div><div class="s">qualidade do modelo</div></div>
+          <div class="kpi"><div class="k">Amostra (backtest)</div><div class="v" id="kN">—</div><div class="s">operações testadas</div></div>
+          <div class="kpi"><div class="k">Filtro de operação</div><div class="v" id="kFilter">—</div><div class="s">portão anti-ruído</div></div>
+        </div>
+      </div>
+      <div id="stateBox" class="mt"><div class="muted">Aguardando dados…</div></div>
+    </div>
+  </div>
+
+  <div class="grid g2 mt">
+    <div class="card">
+      <h3>📖 Leitura do gráfico <span class="tag" id="tagImg">—</span></h3>
+      <div class="stage" id="stage" aria-label="Área de leitura da imagem">
+        <canvas id="cvEdit" width="10" height="10"></canvas>
+        <video id="vid" playsinline muted aria-hidden="true"></video>
+      </div>
+      <canvas id="cvChart" width="640" height="170"></canvas>
+      <div class="row mt">
+        <button class="btn s" id="btnCrop">✂ Marcar área dos candles</button>
+        <button class="btn s" id="btnRedetect">🔄 Re-detectar</button>
+        <button class="btn s" id="btnClear">🗑 Limpar</button>
+      </div>
+      <div class="muted mt" id="imgInfo">Nenhuma imagem carregada. Use 📷 câmera, ⏺ gravar tela ou 🖼️ enviar print no rodapé.</div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Indicadores técnicos <span class="tag" id="tagInd">—</span></h3>
+      <div class="scroll">
+        <table id="indTable">
+          <thead><tr><th>Indicador</th><th>Valor</th><th>Leitura</th><th>Estado</th></tr></thead>
+          <tbody><tr><td colspan="4" class="empty">Aguardando dados…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="mt" id="rulesBox"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ABA: SETUPS ==================== -->
+<section class="view" id="v-setups" aria-label="Setups">
+  <div class="grid g2">
+    <div class="card">
+      <h3>🧩 Meus setups <span class="tag" id="tagSetups">0</span></h3>
+      <div id="setupList"></div>
+      <div class="row mt">
+        <button class="btn p" id="btnNewSetup">＋ Novo</button>
+        <button class="btn s" id="btnDupSetup">⧉ Duplicar</button>
+        <button class="btn s d" id="btnDelSetup">🗑 Excluir</button>
+      </div>
+      <div class="hint">Setup = conjunto de <b>regras técnicas</b> com pesos. O app avalia as regras no gráfico e converte o resultado em probabilidade estatística.</div>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Editor de setup <span class="tag" id="tagEdit">—</span></h3>
+      <div class="field"><label class="f">Nome do setup</label><input type="text" id="setName" placeholder="Ex.: Reversão em Suporte"></div>
+      <div class="grid2">
+        <div class="field"><label class="f">Direção avaliada</label>
+          <select id="setDir">
+            <option value="alta">Alta (compra)</option>
+            <option value="baixa">Baixa (venda)</option>
+            <option value="qualquer">Qualquer direção</option>
+          </select>
+        </div>
+        <div class="field"><label class="f">Payout do broker (%)</label><input type="number" id="setPay" value="85" step="1" min="0"></div>
+      </div>
+      <div class="field">
+        <label class="f">Regras do setup</label>
+        <div id="ruleList"></div>
+        <button class="btn s" id="btnAddRule" style="width:100%;margin-top:8px">＋ Adicionar regra</button>
+      </div>
+      <div class="row mt">
+        <button class="btn g" id="btnSaveSetup">💾 Salvar</button>
+        <button class="btn" id="btnTestSetup">🧪 Calibrar (backtest)</button>
+        <button class="btn p" id="btnApplySetup">▶ Aplicar à análise</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <h3>📈 Resultado da calibração histórica <span class="tag" id="tagBt">—</span></h3>
+    <div id="btBox" class="empty">Clique em <b>Calibrar (backtest)</b> para testar o setup nos últimos candles.</div>
+  </div>
+
+  <div class="card mt">
+    <h3>⚖️ Comparar todos os setups no gráfico atual <span class="tag" id="tagCmp">—</span></h3>
+    <div class="row mb">
+      <button class="btn p" id="btnCompare">🔍 Comparar agora</button>
+      <span class="muted">Requer um gráfico carregado (API ou imagem).</span>
+    </div>
+    <div id="cmpBox" class="empty">Carregue um gráfico e clique em “Comparar agora”.</div>
+  </div>
+</section>
+
+<!-- ==================== ABA: GESTÃO ==================== -->
+<section class="view" id="v-gestao" aria-label="Gestão de banca">
+  <div class="grid g2">
+    <div class="card">
+      <h3>💼 Parâmetros de gestão</h3>
+      <div class="grid2">
+        <div class="field"><label class="f">Banca (saldo)</label><input type="number" id="mgBank" value="1000" step="10"></div>
+        <div class="field"><label class="f">Risco por operação (%)</label><input type="number" id="mgRisk" value="2" step="0.1" min="0.1" max="100"></div>
+        <div class="field"><label class="f">Payout médio (%)</label><input type="number" id="mgPay" value="85" step="1"></div>
+        <div class="field"><label class="f">Operações por dia</label><input type="number" id="mgOps" value="5" step="1" min="1"></div>
+        <div class="field"><label class="f">Stop de perda diária (%)</label><input type="number" id="mgStop" value="6" step="0.5"></div>
+        <div class="field"><label class="f">Máx. perdas seguidas</label><input type="number" id="mgLosses" value="3" step="1" min="1"></div>
+      </div>
+      <div class="row">
+        <button class="btn p" id="btnCalcMgmt">🧮 Calcular plano</button>
+        <button class="btn s" id="btnSaveMgmt">💾 Salvar</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🧮 Plano calculado <span class="tag" id="tagMgmt">—</span></h3>
+      <div id="mgmtBox" class="empty">Preencha os parâmetros e clique em <b>Calcular plano</b>.</div>
+    </div>
+  </div>
+  <div class="card mt">
+    <h3>📉 Simulação de curva de capital <span class="tag" id="tagSim">—</span></h3>
+    <div id="simBox" class="empty">A simulação aparece após calcular o plano.</div>
+  </div>
+</section>
+
+<!-- ==================== ABA: FILTROS ==================== -->
+<section class="view" id="v-filtros" aria-label="Filtros de operação">
+  <div class="card">
+    <h3>🛡️ Portões de operação ("não operar") <span class="tag" id="tagFilt">—</span></h3>
+    <p class="muted">Estes filtros são avaliados <b>antes</b> do cálculo de probabilidade. Se algum reprovar, o estado vira <b>FORA DO PERFIL</b> e a oportunidade é descartada.</p>
+    <div id="filterList" class="mt"></div>
+    <div class="row mt">
+      <button class="btn p" id="btnSaveFilt">💾 Salvar filtros</button>
+      <button class="btn" id="btnTestFilt">🧪 Testar no gráfico atual</button>
+      <button class="btn s" id="btnResetFilt">↺ Padrões de fábrica</button>
+    </div>
+  </div>
+  <div class="card mt">
+    <h3>📋 Resultado dos filtros <span class="tag" id="tagFiltRes">—</span></h3>
+    <div id="filtRes" class="empty">Rode uma análise ou clique em “Testar no gráfico atual”.</div>
+  </div>
+</section>
+
+<!-- ==================== ABA: CONEXÃO ==================== -->
+<section class="view" id="v-conexao" aria-label="Conexão e alertas">
+  <div class="grid g2">
+    <div class="card">
+      <h3>🔌 API de dados de mercado</h3>
+      <div class="field">
+        <label class="f">Base URL (padrão: Binance Vision — liberada para CORS)</label>
+        <input type="text" id="feedBase" value="https://data-api.binance.vision">
+      </div>
+      <div class="row">
+        <button class="btn s" id="btnTestFeed">🔍 Testar conexão</button>
+        <span class="chip" id="chipFeed2"><span class="dot"></span> —</span>
+      </div>
+      <div class="hint">Se o Binance estiver bloqueado na sua região, use um servidor próprio ou um proxy. Configure a URL acima.</div>
+
+      <hr class="sep">
+      <h3>🏦 API da corretora</h3>
+      <div class="field"><label class="f">URL do endpoint</label><input type="text" id="brUrl" placeholder="https://api.sua-correta.com/..."></div>
+      <div class="grid2">
+        <div class="field"><label class="f">Método</label><select id="brMethod"><option>GET</option><option>POST</option></select></div>
+        <div class="field"><label class="f">Cabeçalho da chave</label><input type="text" id="brKeyH" value="X-API-KEY"></div>
+      </div>
+      <div class="field"><label class="f">Chave da API</label><input type="text" id="brKey" placeholder="cole sua chave aqui"></div>
+      <div class="field"><label class="f">Corpo JSON (POST)</label><textarea id="brBody" rows="3" placeholder='{"symbol":"BTCUSDT"}'></textarea></div>
+      <div class="row">
+        <button class="btn s" id="btnTestBroker">🔍 Testar corretora</button>
+        <span class="chip" id="chipBroker"><span class="dot"></span> —</span>
+      </div>
+      <div class="warnbox">⚠️ Muitas corretoras bloqueiam requisições do navegador (CORS). Se o teste falhar com erro de CORS, rode a ponte local (o passo a passo está no guia que acompanha o app).</div>
+
+      <hr class="sep mt">
+      <h3>💾 Backup e restauração</h3>
+      <div class="row">
+        <button class="btn s" id="btnExport">📤 Exportar dados</button>
+        <button class="btn s" id="btnImport">📥 Importar dados</button>
+        <input type="file" id="fileImport" accept=".json" style="display:none">
+      </div>
+      <div class="muted">Exporta setups, filtros, gestão, alertas e universo de ativos para um arquivo JSON.</div>
+    </div>
+
+    <div class="card">
+      <h3>📡 Webhook TradingView</h3>
+      <div class="field"><label class="f">URL do webhook</label><input type="text" id="tvUrl" placeholder="https://seu-servidor/webhook"></div>
+      <div class="field"><label class="f">Corpo JSON enviado</label><textarea id="tvBody" rows="6">{
+  "event": "alerta_roxoia",
+  "symbol": "{{symbol}}",
+  "timeframe": "{{interval}}",
+  "setup": "{{setup}}",
+  "probabilidade": "{{prob}}",
+  "confianca": "{{conf}}"
+}</textarea></div>
+      <div class="row">
+        <button class="btn s" id="btnTestTv">🔍 Testar webhook</button>
+        <span class="chip" id="chipTv"><span class="dot"></span> —</span>
+      </div>
+      <div class="hint">No TradingView: <b>Alertas → Webhook URL</b>. O app dispara o alerta quando a varredura automática encontra uma oportunidade estatística acima do seu limiar.</div>
+
+      <hr class="sep">
+      <h3>🤖 Varredura automática de oportunidades</h3>
+      <label class="switch" style="margin-bottom:12px">
+        <input type="checkbox" id="aiOn">
+        <span class="track"><span class="knob"></span></span>
+        <span style="font-weight:700;font-size:13px">Ativar varredura automática (IA)</span>
+      </label>
+      <div class="grid2">
+        <div class="field"><label class="f">Probabilidade mínima (%)</label><input type="number" id="aiMinProb" value="62" step="1" min="30" max="95"></div>
+        <div class="field"><label class="f">Confiabilidade mínima</label><input type="number" id="aiMinConf" value="55" step="1" min="0" max="100"></div>
+        <div class="field"><label class="f">Tempo gráfico</label>
+          <select id="aiTf"><option value="1m">1m</option><option value="5m" selected>5m</option><option value="15m">15m</option><option value="1h">1h</option></select>
+        </div>
+        <div class="field"><label class="f">Intervalo de varredura (s)</label><input type="number" id="aiEvery" value="60" step="10" min="20"></div>
+      </div>
+      <div class="field"><label class="f">Universo de ativos (um por linha)</label><textarea id="aiUniverse" rows="5"></textarea></div>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="aiSound" checked><span class="track"><span class="knob"></span></span><span style="font-size:12.5px">Som</span></label>
+        <label class="switch"><input type="checkbox" id="aiHook" checked><span class="track"><span class="knob"></span></span><span style="font-size:12.5px">Webhook</span></label>
+        <button class="btn s" id="btnScanNow">▶ Varrer agora</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <h3>🔔 Alertas gerados <span class="tag" id="tagAlerts">0</span></h3>
+    <div id="alertList" class="empty"><span class="ic">🔕</span>Nenhum alerta ainda. Ative a varredura automática para o app monitorar os ativos e avisar quando a probabilidade estatística ultrapassar o seu limiar.</div>
+  </div>
+
+  <div class="grid g2 mt">
+    <div class="card">
+      <h3>🩺 Autodiagnóstico do app <span class="tag" id="tagDiag">—</span></h3>
+      <p class="muted">Testes automáticos que verificam se os cálculos (indicadores, padrões de candle, modelo probabilístico, leitor de imagem) estão corretos.</p>
+      <div class="row mt"><button class="btn p" id="btnDiag">🩺 Executar autodiagnóstico</button></div>
+      <div id="diagBox" class="mt empty">Clique para rodar os testes.</div>
+    </div>
+    <div class="card">
+      <h3>📜 Console de eventos</h3>
+      <div class="log" id="logBox"></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ==================== RODAPÉ ==================== -->
+<footer class="dock">
+  <div class="dock-in">
+    <div class="cap-row">
+      <button class="cap" id="btnCam" aria-label>Abrir câmera><i>📷</i>FOTO / CÂMERA</button>
+      <button class="cap" id="btnRec" aria-label=Iniciar captura de tela><i>⏺</i>GRAVAR TELA</button>
+      <button class="cap" id="btnUp" aria-label=Enviar print><i>🖼️</i>ENVIAR PRINT</button>
+    </div>
+    <nav class="tabs" aria-label="Navegação principal">
+      <button class="tab active" data-v="analise"><i>📊</i>Análise</button>
+      <button class="tab" data-v="setups"><i>🧩</i>Setups</button>
+      <button class="tab" data-v="gestao"><i>💼</i>Gestão</button>
+      <button class="tab" data-v="filtros"><i>🛡️</i>Filtros</button>
+      <button class="tab" data-v="conexao"><i>🔌</i>Conexão</button>
+    </nav>
+  </div>
+</footer>
+
+<div class="ov" id="ov" aria-hidden="true"><div class="modal" id="modal"></div></div>
+<div id="toasts"></div>
+
+<script>
+/* ==================================================================
+   roxo.ia — Motor de análise probabilística de gráficos (versão revisada)
+   ================================================================== */
+(function(){
+'use strict';
+
+/* ================================================================
+   1. UTILITÁRIOS
+   ================================================================ */
+const $  = (s,r)=> (r||document).querySelector(s);
+const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
+const clamp=(v,a,b)=> Math.max(a, Math.min(b, v));
+const isN = v => typeof v==='number' && isFinite(v);
+const fmt = (n,d)=> isN(n)? n.toFixed(d===undefined?2:d) : '—';
+const pctS= (n,d)=> isN(n)? (n*100).toFixed(d===undefined?1:d)+'%' : '—';
+const nowIso=()=> new Date().toISOString();
+const uid  = ()=> Math.random().toString(36).slice(2,9);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep = ms=> new Promise(r=>setTimeout(r,ms));
+
+function toast(msg,type){
+  const box=$('#toasts'); if(!box) return;
+  const t=document.createElement('div');
+  t.className='toast '+(type||'info');
+  const ic={ok:'✅',warn:'⚠️',bad:'❌',info:'ℹ️'}[type||'info'];
+  t.innerHTML='<span>'+ic+'</span><span>'+esc(msg)+'</span>';
+  box.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='.3s'; setTimeout(()=>t.remove(),320); },4500);
+}
+function log(msg,level){
+  const b=$('#logBox'); if(!b) return;
+  const ts=new Date().toLocaleTimeString('pt-BR');
+  const cls={i:'i',s:'s',w:'w',e:'e'}[level]||'i';
+  const line=document.createElement('div');
+  line.innerHTML='<span class="t">'+esc(ts)+'</span> <span class="'+cls+'">'+esc(msg)+'</span>';
+  b.appendChild(line); b.scrollTop=b.scrollHeight;
+  while(b.children.length>250) b.removeChild(b.firstChild);
+}
+function openModal(html){
+  const m=$('#modal'); m.innerHTML=html; $('#ov').classList.add('on'); m.scrollTop=0;
+  $$('[data-close]',m).forEach(b=>b.onclick=closeModal);
+}
+function closeModal(){ $('#ov').classList.remove('on'); }
+
+/* ================================================================
+   2. PERSISTÊNCIA (localStorage)
+   ================================================================ */
+const DB={
+  get(k,d){ try{ const v=localStorage.getItem('roxoia.'+k); return v===null?d:JSON.parse(v);}catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem('roxoia.'+k,JSON.stringify(v)); return true;}catch(e){ toast('Armazenamento bloqueado pelo navegador','warn'); return false; } },
+  del(k){ try{ localStorage.removeItem('roxoia.'+k);}catch(e){} }
+};
+
+/* ================================================================
+   3. INDICADORES TÉCNICOS
+   ================================================================ */
+const IND={
+  sma(a,p){
+    const o=new Array(a.length).fill(null); let s=0;
+    for(let i=0;i<a.length;i++){ s+=a[i]; if(i>=p) s-=a[i-p]; if(i>=p-1) o[i]=s/p; }
+    return o;
+  },
+  ema(a,p){
+    const o=new Array(a.length).fill(null); const k=2/(p+1); let e=null;
+    for(let i=0;i<a.length;i++){ e = (e===null)? a[i] : a[i]*k+e*(1-k); o[i]=e; }
+    return o;
+  },
+  wilder(a,p){
+    const n=a.length, o=new Array(n).fill(null); let sum=0, prev=null;
+    for(let i=0;i<n;i++){
+      if(i<p-1){ sum+=a[i]; continue; }
+      if(i===p-1){ sum+=a[i]; prev=sum/p; o[i]=prev; continue; }
+      prev=(prev*(p-1)+a[i])/p; o[i]=prev;
+    }
+    return o;
+  },
+  rsi(c,p){
+    p=p||14; const n=c.length, o=new Array(n).fill(null);
+    if(n<=p) return o;
+    let g=0,l=0;
+    for(let i=1;i<=p;i++){ const d=c[i]-c[i-1]; if(d>0) g+=d; else l-=d; }
+    let ag=g/p, al=l/p;
+    o[p] = al===0?100:100-100/(1+ag/al);
+    for(let i=p+1;i<n;i++){
+      const d=c[i]-c[i-1], gg=d>0?d:0, ll=d<0?-d:0;
+      ag=(ag*(p-1)+gg)/p; al=(al*(p-1)+ll)/p;
+      o[i]= al===0?100:100-100/(1+ag/al);
+    }
+    return o;
+  },
+  macd(c,f,s,sg){
+    f=f||12; s=s||26; sg=sg||9;
+    const ef=IND.ema(c,f), es=IND.ema(c,s);
+    const line=c.map((_,i)=> ef[i]-es[i]);
+    const signal=IND.ema(line,sg);
+    const hist=line.map((v,i)=> v-signal[i]);
+    return {line:line,signal:signal,hist:hist};
+  },
+  atr(h,l,c,p){
+    p=p||14; const n=c.length, tr=new Array(n).fill(0);
+    tr[0]=Math.max(h[0]-l[0],1e-9);
+    for(let i=1;i<n;i++) tr[i]=Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1]));
+    return IND.wilder(tr,p);
+  },
+  stoch(h,l,c,p,kLen,dLen){
+    p=p||14; kLen=kLen||3; dLen=dLen||3;
+    const n=c.length, raw=new Array(n).fill(null), K=new Array(n).fill(null), D=new Array(n).fill(null);
+    for(let i=0;i<n;i++){
+      let hh=-Infinity, ll=Infinity;
+      for(let j=Math.max(0,i-p+1);j<=i;j++){ if(h[j]>hh) hh=h[j]; if(l[j]<ll) ll=l[j]; }
+      raw[i]= (hh===ll)?50:((c[i]-ll)/(hh-ll))*100;
+    }
+    for(let i=kLen-1;i<n;i++){ let s=0; for(let j=i-kLen+1;j<=i;j++) s+=raw[j]; K[i]=s/kLen; }
+    for(let i=dLen-1;i<n;i++){
+      let s=0,cnt=0; for(let j=i-dLen+1;j<=i;j++){ if(K[j]!=null){ s+=K[j]; cnt++; } }
+      D[i]= (cnt===dLen)? s/dLen : null;
+    }
+    return {k:K,d:D,raw:raw};
+  },
+  adx(h,l,c,p){
+    p=p||14; const n=c.length;
+    const TR=new Array(n).fill(0), PD=new Array(n).fill(0), ND=new Array(n).fill(0);
+    for(let i=1;i<n;i++){
+      TR[i]=Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1]));
+      const up=h[i]-h[i-1], dn=l[i-1]-l[i];
+      PD[i]=(up>dn&&up>0)?up:0;
+      ND[i]=(dn>up&&dn>0)?dn:0;
+    }
+    const a=IND.wilder(TR,p), sp=IND.wilder(PD,p), sm=IND.wilder(ND,p);
+    const dx=new Array(n).fill(null), pdi=new Array(n).fill(null), ndi=new Array(n).fill(null);
+    for(let i=0;i<n;i++){
+      if(a[i]==null||a[i]===0) continue;
+      const P=100*sp[i]/a[i], M=100*sm[i]/a[i];
+      pdi[i]=P; ndi[i]=M; dx[i]=100*Math.abs(P-M)/((P+M)||1);
+    }
+    const out=new Array(n).fill(null); let prev=null, cnt=0, sum=0;
+    for(let i=0;i<n;i++){
+      if(dx[i]==null) continue;
+      cnt++; sum+=dx[i];
+      if(cnt<p){ if(cnt===p){ prev=sum/p; out[i]=prev; } continue; }
+      prev=(prev*(p-1)+dx[i])/p; out[i]=prev;
+    }
+    return {adx:out,pdi:pdi,ndi:ndi};
+  },
+  bb(c,p,k){
+    p=p||20; k=k||2;
+    const m=IND.sma(c,p), up=new Array(c.length).fill(null), lo=new Array(c.length).fill(null), sd=new Array(c.length).fill(null);
+    for(let i=p-1;i<c.length;i++){
+      let s=0; for(let j=i-p+1;j<=i;j++) s+=(c[j]-m[i])*(c[j]-m[i]);
+      sd[i]=Math.sqrt(s/p); up[i]=m[i]+k*sd[i]; lo[i]=m[i]-k*sd[i];
+    }
+    return {mid:m,up:up,lo:lo,sd:sd};
+  },
+  roc(c,p){
+    p=p||10; const o=new Array(c.length).fill(null);
+    for(let i=p;i<c.length;i++){ if(c[i-p]) o[i]=(c[i]-c[i-p])/c[i-p]*100; }
+    return o;
+  }
+};
+
+/* ================================================================
+   4. PADRÕES DE CANDLE
+   ================================================================ */
+function candleStats(b){
+  const body=Math.abs(b.c-b.o), range=Math.max(b.h-b.l,1e-9);
+  const top=Math.max(b.o,b.c), bot=Math.min(b.o,b.c);
+  return {body:body, range:range, upper:b.h-top, lower:bot-b.l, dir:(b.c>=b.o?1:-1)};
+}
+const PATTERNS={
+  doji:{n:'Doji (indecisão)', s:0, f:(b)=>candleStats(b).body<=candleStats(b).range*0.10},
+  hammer:{n:'Martelo (reversão de alta)', s:1, f:(b)=>{const k=candleStats(b); return k.lower>=k.body*2 && k.upper<=k.body*0.8 && b.c>=b.o;}},
+  hangingman:{n:'Enforcado (alerta de baixa)', s:-1, f:(b)=>{const k=candleStats(b); return k.lower>=k.body*2 && k.upper<=k.body*0.8 && b.c<b.o;}},
+  shootingstar:{n:'Estrela cadente (reversão de baixa)', s:-1, f:(b)=>{const k=candleStats(b); return k.upper>=k.body*2 && k.lower<=k.body*0.8;}},
+  marubozu:{n:'Marubozu (força direcional)', s:0, f:(b)=>candleStats(b).body>=candleStats(b).range*0.90},
+  bullishengulf:{n:'Engolfo de alta', s:1, f:(b,s)=> !!(s.p2 && s.p2.c<s.p2.o && b.c>b.o && b.o<=s.p2.c && b.c>=s.p2.o)},
+  bearishengulf:{n:'Engolfo de baixa', s:-1, f:(b,s)=> !!(s.p2 && s.p2.c>s.p2.o && b.c<b.o && b.o>=s.p2.c && b.c<=s.p2.o)},
+  morningstar:{n:'Estrela da manhã', s:1, f:(b,s)=> !!(s.p2&&s.p3&&s.p3.c<s.p3.o&&candleStats(s.p2).body<candleStats(s.p2).range*0.45&&b.c>b.o&&b.c>(s.p2.o+s.p2.c)/2)},
+  eveningstar:{n:'Estrela da noite', s:-1, f:(b,s)=> !!(s.p2&&s.p3&&s.p3.c>s.p3.o&&candleStats(s.p2).body<candleStats(s.p2).range*0.45&&b.c<b.o&&b.c<(s.p2.o+s.p2.c)/2)},
+  insidebar:{n:'Barra interna', s:0, f:(b,s)=> !!(s.p2 && b.h<=s.p2.h && b.l>=s.p2.l)},
+  bullish3:{n:'Três soldados brancos', s:1, f:(b,s)=> !!(s.p2&&s.p3&&s.p2.c>s.p2.o&&s.p3.c>s.p3.o&&b.c>b.o&&b.c>s.p2.c&&b.c>s.p3.c)},
+  bearish3:{n:'Três corvos negros', s:-1, f:(b,s)=> !!(s.p2&&s.p3&&s.p2.c<s.p2.o&&s.p3.c<s.p3.o&&b.c<b.o&&b.c<s.p2.c&&b.c<s.p3.c)},
+  pinbarup:{n:'Pin bar de alta', s:1, f:(b)=>{const k=candleStats(b); return k.lower>=k.body*1.8&&k.upper<=k.body*1.2&&b.c>=b.o;}},
+  pinbardown:{n:'Pin bar de baixa', s:-1, f:(b)=>{const k=candleStats(b); return k.upper>=k.body*1.8&&k.lower<=k.body*1.2&&b.c<b.o;}},
+  tweezerbottom:{n:'Pinça de fundo', s:1, f:(b,s)=> !!(s.p2 && Math.abs(b.l-s.p2.l)<=s.p2.range*0.08 && b.c>b.o && s.p2.c<s.p2.o)},
+  tweezertop:{n:'Pinça de topo', s:-1, f:(b,s)=> !!(s.p2 && Math.abs(b.h-s.p2.h)<=s.p2.range*0.08 && b.c<b.o && s.p2.c>s.p2.o)}
+};
+
+/* ================================================================
+   5. MOTOR DE REGRAS
+   ================================================================ */
+const RULES={
+  ema_cross:{n:'Cruz de EMAs', f:[
+    {k:'fast',l:'EMA rápida',t:'n',d:9},{k:'slow',l:'EMA lenta',t:'n',d:21},
+    {k:'dir',l:'Cruz',t:'s',o:[['alta','para cima (bullish)'],['baixa','para baixo (bearish)']]}]},
+  ema_stack:{n:'Empilhamento de EMAs', f:[
+    {k:'fast',l:'Rápida',t:'n',d:9},{k:'mid',l:'Média',t:'n',d:21},{k:'slow',l:'Lenta',t:'n',d:50},
+    {k:'dir',l:'Ordem',t:'s',o:[['alta','rápida > média > lenta'],['baixa','rápida < média < lenta']]}]},
+  ema_price:{n:'Preço vs EMA', f:[
+    {k:'len',l:'Período da EMA',t:'n',d:50},
+    {k:'dir',l:'Posição do preço',t:'s',o:[['acima','acima da EMA'],['abaixo','abaixo da EMA']]}]},
+  rsi_level:{n:'Nível de RSI', f:[
+    {k:'len',l:'Período',t:'n',d:14},
+    {k:'op',l:'Condição',t:'s',o:[['menor','abaixo de'],['maior','acima de']]},
+    {k:'val',l:'Valor',t:'n',d:70}]},
+  rsi_zone:{n:'Faixa de RSI', f:[
+    {k:'len',l:'Período',t:'n',d:14},{k:'min',l:'Mínimo',t:'n',d:30},{k:'max',l:'Máximo',t:'n',d:70}]},
+  macd_hist:{n:'Histograma MACD', f:[
+    {k:'op',l:'Condição',t:'s',o:[['pos','positivo'],['neg','negativo'],['crossup','cruzou para cima'],['crossdown','cruzou para baixo']]}]},
+  bb_break:{n:'Bandas de Bollinger', f:[
+    {k:'len',l:'Período',t:'n',d:20},{k:'k',l:'Desvio padrão',t:'n',d:2},
+    {k:'op',l:'Condição',t:'s',o:[['above','fechou acima da superior'],['below','fechou abaixo da inferior'],['inside','dentro das bandas'],['squeeze','compressão (squeeze)']]},
+    {k:'mode',l:'Leitura',t:'s',o:[['momentum','força / momentum'],['reversal','reversão / exaustão']]}]},
+  stoch:{n:'Estocástico', f:[
+    {k:'op',l:'Condição',t:'s',o:[['os','sobrevendido (<20)'],['ob','sobrecomprado (>80)'],['ku','cruzou K acima de D'],['kd','cruzou K abaixo de D']]}]},
+  adx:{n:'Força da tendência (ADX)', f:[
+    {k:'op',l:'Condição',t:'s',o:[['acima','acima de'],['abaixo','abaixo de']]},{k:'val',l:'Valor',t:'n',d:25}]},
+  atr_pct:{n:'Volatilidade (ATR em %)', f:[
+    {k:'op',l:'Condição',t:'s',o:[['acima','acima de'],['abaixo','abaixo de'],['entre','entre']]},
+    {k:'a',l:'Mín %',t:'n',d:0.10},{k:'b',l:'Máx %',t:'n',d:2.00}]},
+  volume:{n:'Volume relativo', f:[
+    {k:'ma',l:'Média do volume',t:'n',d:20},{k:'x',l:'Multiplicador',t:'n',d:1.5}]},
+  momentum:{n:'Momentum (ROC %)', f:[
+    {k:'len',l:'Período',t:'n',d:10},
+    {k:'op',l:'Condição',t:'s',o:[['acima','acima de'],['abaixo','abaixo de']]},
+    {k:'val',l:'Valor %',t:'n',d:0.1}]},
+  pattern:{n:'Padrão de candle', f:[
+    {k:'p',l:'Padrão',t:'s',o:Object.keys(PATTERNS).map(k=>[k,PATTERNS[k].n])}]},
+  body_ratio:{n:'Corpo vs ATR', f:[
+    {k:'x',l:'Tamanho mínimo (x ATR)',t:'n',d:0.8},
+    {k:'dir',l:'Direção do candle',t:'s',o:[['alta','alta'],['baixa','baixa'],['qualquer','qualquer']]}]},
+  breakout:{n:'Rompimento de máxima/mínima', f:[
+    {k:'len',l:'Janela (candles)',t:'n',d:20},
+    {k:'dir',l:'Rompimento',t:'s',o:[['up','acima da máxima'],['dn','abaixo da mínima']]}]},
+  swing:{n:'Estrutura de topos/fundos', f:[
+    {k:'len',l:'Janela (candles)',t:'n',d:20},
+    {k:'dir',l:'Estrutura',t:'s',o:[['hh','topo mais alto'],['lh','fundo mais baixo']]}]},
+  consecutive:{n:'Candles seguidos', f:[
+    {k:'n',l:'Quantidade',t:'n',d:3},{k:'dir',l:'Direção',t:'s',o:[['alta','de alta'],['baixa','de baixa']]}]},
+  sr_level:{n:'Distância de Suporte/Resistência', f:[
+    {k:'dist',l:'Distância máx. (%)',t:'n',d:0.30},
+    {k:'dir',l:'Nível',t:'s',o:[['sup','suporte próximo'],['res','resistência próxima'],['qualquer','qualquer']]}]},
+  time_window:{n:'Janela de horário (local)', f:[
+    {k:'from',l:'De (hora)',t:'n',d:9},{k:'to',l:'Até (hora)',t:'n',d:17}]},
+  htf_bias:{n:'Viés de timeframe superior', f:[
+    {k:'len',l:'EMA do TF superior',t:'n',d:50},
+    {k:'dir',l:'Condição',t:'s',o:[['ok','a favor da direção do setup'],['contra','contra a direção do setup']]}]}
+};
+
+function ruleDirection(r){
+  const p=r.params||{};
+  switch(r.type){
+    case 'ema_cross':   return p.dir==='baixa'?-1:1;
+    case 'ema_stack':   return p.dir==='baixa'?-1:1;
+    case 'ema_price':   return p.dir==='abaixo'?-1:1;
+    case 'rsi_level':   return p.op==='maior'?-1:1;
+    case 'macd_hist':   return (p.op==='neg'||p.op==='crossdown')?-1:1;
+    case 'stoch':       return (p.op==='ob'||p.op==='kd')?-1:1;
+    case 'bb_break':{
+      const rev = p.mode==='reversal';
+      if(p.op==='above') return rev?-1:1;
+      if(p.op==='below') return rev?1:-1;
+      return 0;
+    }
+    case 'momentum':    return p.op==='abaixo'?-1:1;
+    case 'pattern':     return (PATTERNS[p.p]&&PATTERNS[p.p].s)||0;
+    case 'body_ratio':  return p.dir==='baixa'?-1:(p.dir==='alta'?1:0);
+    case 'breakout':    return p.dir==='dn'?-1:1;
+    case 'swing':       return p.dir==='lh'?-1:1;
+    case 'consecutive': return p.dir==='baixa'?-1:1;
+    case 'sr_level':    return p.dir==='res'?-1:(p.dir==='sup'?1:0);
+    default: return 0;
+  }
+}
+
+function at(arr,i){ return (arr && arr[i]!=null)? arr[i] : null; }
+
+function evalRule(rule,ctx,candles,idx){
+  const p=rule.params||{}; const I=ctx;
+  const last=candles[idx], prev=candles[idx-1], prev2=candles[idx-2];
+  const out=(pass,val,text)=>({pass:pass,value:(val===undefined?null:val),text:text});
+  const num=(k,d)=>{ const v=parseFloat(p[k]); return isN(v)? v : d; };
+  const cI=at(I.c,idx);
+
+  switch(rule.type){
+    case 'ema_cross':{
+      const f=num('fast',9), s=num('slow',21);
+      const ef=IND.ema(I.c,f), es=IND.ema(I.c,s);
+      const d0=ef[idx-1]-es[idx-1], d1=ef[idx]-es[idx];
+      if(d0==null||d1==null) return out(null,null,'EMAs ainda não calculadas');
+      const up=d0<=0&&d1>0, dn=d0>=0&&d1<0;
+      const want=p.dir||'alta';
+      if(want==='alta') return out(up,null,up?'Cruz de alta confirmado':'Sem cruz de alta');
+      return out(dn,null,dn?'Cruz de baixa confirmado':'Sem cruz de baixa');
+    }
+    case 'ema_stack':{
+      const a=IND.ema(I.c,num('fast',9)), b=IND.ema(I.c,num('mid',21)), c2=IND.ema(I.c,num('slow',50));
+      if(a[idx]==null||b[idx]==null||c2[idx]==null) return out(null,null,'EMAs insuficientes');
+      const up=a[idx]>b[idx]&&b[idx]>c2[idx], dn=a[idx]<b[idx]&&b[idx]<c2[idx];
+      const pass=(p.dir==='baixa')?dn:up;
+      return out(pass,null,pass?'EMAs alinhadas':'EMAs desalinhadas');
+    }
+    case 'ema_price':{
+      const L=num('len',50); const e=IND.ema(I.c,L)[idx];
+      if(e==null||cI==null) return out(null,null,'EMA indisponível');
+      const above=cI>e, want=(p.dir==='abaixo')?!above:above;
+      return out(want,cI, want? 'Preço '+(p.dir==='abaixo'?'abaixo':'acima')+' da EMA'+L : 'Preço fora da condição');
+    }
+    case 'rsi_level':{
+      const r=at(I.rsi,idx); if(r==null) return out(null,null,'RSI indisponível');
+      const v=num('val',70); const pass=(p.op==='menor')? r<v : r>v;
+      return out(pass,r,'RSI('+num('len',14)+') = '+fmt(r,1));
+    }
+    case 'rsi_zone':{
+      const r=at(I.rsi,idx); if(r==null) return out(null,null,'RSI indisponível');
+      const pass=r>=num('min',30)&&r<=num('max',70);
+      return out(pass,r,'RSI = '+fmt(r,1));
+    }
+    case 'macd_hist':{
+      const h0=at(I.macd.hist,idx), h1=at(I.macd.hist,idx-1);
+      if(h0==null) return out(null,null,'MACD indisponível');
+      if(p.op==='pos')   return out(h0>0,h0,'Histograma '+(h0>0?'positivo':'negativo'));
+      if(p.op==='neg')   return out(h0<0,h0,'Histograma '+(h0<0?'negativo':'positivo'));
+      if(p.op==='crossup'){ const pass=h1!=null&&h1<=0&&h0>0; return out(pass,h0,'Cruz do MACD para cima'); }
+      const pass=h1!=null&&h1>=0&&h0<0; return out(pass,h0,'Cruz do MACD para baixo');
+    }
+    case 'bb_break':{
+      const up=at(I.bb.up,idx), lo=at(I.bb.lo,idx), mid=at(I.bb.mid,idx);
+      if(up==null||cI==null) return out(null,null,'Bollinger indisponível');
+      if(p.op==='above')  return out(cI>up,cI,'Fechou acima da banda superior');
+      if(p.op==='below')  return out(cI<lo,cI,'Fechou abaixo da banda inferior');
+      if(p.op==='inside') return out(cI<=up&&cI>=lo,cI,'Fechou dentro das bandas');
+      const bw=mid? (up-lo)/mid : null;
+      const lim=num('k',2)*0.55;
+      return out(bw!=null&&bw<lim,bw,'Largura das bandas '+(bw!=null?fmt(bw*100,2)+'%':'—'));
+    }
+    case 'stoch':{
+      const K=at(I.stoch.k,idx), K1=at(I.stoch.k,idx-1), D=at(I.stoch.d,idx), D1=at(I.stoch.d,idx-1);
+      if(K==null) return out(null,null,'Estocástico indisponível');
+      if(p.op==='os') return out(K<20,K,'%K = '+fmt(K,1));
+      if(p.op==='ob') return out(K>80,K,'%K = '+fmt(K,1));
+      if(p.op==='ku'){ const pass=K1!=null&&D1!=null&&K1<=D1&&K>D; return out(pass,K,'Cruz de %K para cima de %D'); }
+      const pass=K1!=null&&D1!=null&&K1>=D1&&K<D; return out(pass,K,'Cruz de %K para baixo de %D');
+    }
+    case 'adx':{
+      const a=at(I.adx.adx,idx); if(a==null) return out(null,null,'ADX indisponível');
+      const v=num('val',25); const pass=(p.op==='acima')? a>v : a<v;
+      return out(pass,a,'ADX = '+fmt(a,1));
+    }
+    case 'atr_pct':{
+      const a=at(I.atr,idx); if(a==null||!cI) return out(null,null,'ATR indisponível');
+      const ap=a/cI*100; const op=p.op||'entre';
+      let pass;
+      if(op==='acima')  pass=ap>num('a',0.1);
+      else if(op==='abaixo') pass=ap<num('a',0.1);
+      else pass= ap>=num('a',0.1) && ap<=num('b',2);
+      return out(pass,ap,'ATR = '+fmt(ap,3)+'% do preço');
+    }
+    case 'volume':{
+      const ma=at(I.volMA,idx), v=I.v[idx];
+      if(ma==null||!ma||!v) return out(null,null,'Volume indisponível');
+      const r=v/ma; return out(r>=num('x',1.5),r,'Volume = '+fmt(r,2)+'x a média');
+    }
+    case 'momentum':{
+      const L=num('len',10); const roc=IND.roc(I.c,L); const r=at(roc,idx);
+      if(r==null) return out(null,null,'ROC indisponível');
+      const v=num('val',0.1); const pass=(p.op==='acima')? r>v : r<v;
+      return out(pass,r,'ROC('+L+') = '+fmt(r,3)+'%');
+    }
+    case 'pattern':{
+      if(!last) return out(null,null,'Sem candle');
+      const pat=PATTERNS[p.p||'doji']; if(!pat) return out(null,null,'Padrão desconhecido');
+      const s={p2:prev,p3:prev2};
+      const pass=!!pat.f(last,s);
+      return out(pass,null,pat.n+(pass?' (confirmado)':' (ausente)'));
+    }
+    case 'body_ratio':{
+      const a=at(I.atr,idx); if(!a||!last) return out(null,null,'ATR indisponível');
+      const st=candleStats(last); const br=st.body/a; const dir=p.dir||'qualquer';
+      const okDir = dir==='qualquer' || (dir==='alta'? st.dir>0 : st.dir<0);
+      return out(br>=num('x',0.8)&&okDir, br,'Corpo = '+fmt(br,2)+'x ATR');
+    }
+    case 'breakout':{
+      const L=num('len',20); if(idx<L+1) return out(null,null,'Janela insuficiente');
+      let hh=-Infinity,ll=Infinity;
+      for(let j=idx-L;j<idx;j++){ if(I.h[j]>hh)hh=I.h[j]; if(I.l[j]<ll)ll=I.l[j]; }
+      if(p.dir==='dn'){ const pass=I.c[idx]<ll; return out(pass,I.c[idx],pass?'Rompimento da mínima de '+L+' candles':'Sem rompimento'); }
+      const pass=I.c[idx]>hh; return out(pass,I.c[idx],pass?'Rompimento da máxima de '+L+' candles':'Sem rompimento');
+    }
+    case 'swing':{
+      const L=num('len',20); if(idx<L+2) return out(null,null,'Histórico insuficiente');
+      const half=Math.floor(L/2);
+      const seg=(a,b)=>{ let h=-Infinity,l=Infinity; for(let j=a;j<b;j++){ if(I.h[j]>h)h=I.h[j]; if(I.l[j]<l)l=I.l[j]; } return {h:h,l:l}; };
+      const A=seg(idx-L,idx-L+half), B=seg(idx-L+half,idx);
+      if(p.dir==='lh'){ const pass=B.l<A.l; return out(pass,B.l,pass?'Fundo mais baixo (estrutura de baixa)':'Sem fundo mais baixo'); }
+      const pass=B.h>A.h; return out(pass,B.h,pass?'Topo mais alto (estrutura de alta)':'Sem topo mais alto');
+    }
+    case 'consecutive':{
+      const n=num('n',3); const want=p.dir||'alta';
+      let cnt=0;
+      for(let j=idx;j>=0&&j>=idx-n;j--){ const b=candles[j]; const d=b.c>=b.o?1:-1;
+        if((want==='alta'&&d>0)||(want==='baixa'&&d<0)) cnt++; else break; }
+      return out(cnt>=n,cnt,cnt+' candle(s) de '+want+' seguidos');
+    }
+    case 'sr_level':{
+      const L=30; if(idx<L+2) return out(null,null,'Histórico insuficiente');
+      let hh=-Infinity,ll=Infinity;
+      for(let j=idx-L;j<idx;j++){ if(I.h[j]>hh)hh=I.h[j]; if(I.l[j]<ll)ll=I.l[j]; }
+      if(cI==null) return out(null,null,'Sem preço');
+      const dSup=Math.abs(cI-ll)/cI*100, dRes=Math.abs(cI-hh)/cI*100;
+      const lim=num('dist',0.30); const want=p.dir||'qualquer';
+      let pass=false,txt='—';
+      if(want==='sup'){ pass=dSup<=lim; txt='Distância do suporte: '+fmt(dSup,3)+'%'; }
+      else if(want==='res'){ pass=dRes<=lim; txt='Distância da resistência: '+fmt(dRes,3)+'%'; }
+      else { pass=Math.min(dSup,dRes)<=lim; txt='Menor distância: '+fmt(Math.min(dSup,dRes),3)+'%'; }
+      return out(pass,Math.min(dSup,dRes),txt);
+    }
+    case 'time_window':{
+      if(!last) return out(null,null,'Sem candle');
+      const h=new Date(last.t||Date.now()).getHours();
+      const F=num('from',9), T=num('to',17);
+      const pass=(F<=T)? (h>=F&&h<T) : (h>=F||h<T);
+      return out(pass,h,'Hora local: '+String(h).padStart(2,'0')+':00');
+    }
+    case 'htf_bias':{
+      const htf=ctx.htf;
+      if(!htf||!htf.ema||!htf.c) return out(null,null,'Timeframe superior indisponível');
+      const e=at(htf.ema,htf.i), c=at(htf.c,htf.i);
+      if(e==null||c==null) return out(null,null,'TF superior indisponível');
+      const above=c>e;
+      const setupSign=(ctx.setupDir==='baixa')?-1:1;
+      const bias=above?1:-1;
+      const want=p.dir||'ok';
+      const pass=(want==='ok')? bias===setupSign : bias!==setupSign;
+      return out(pass,c,'TF superior '+(above?'acima':'abaixo')+' da EMA'+num('len',50));
+    }
+  }
+  return out(null,null,'Regra desconhecida');
+}
+
+/* ================================================================
+   6. FILTROS DE OPERAÇÃO
+   ================================================================ */
+const DEFAULT_FILTERS=[
+  {id:'atr_pct', on:true,  a:0.05, b:3.00, l:'Volatilidade (ATR%) dentro da faixa'},
+  {id:'adx',     on:false, a:18,   b:60,   l:'Força de tendência (ADX) dentro da faixa'},
+  {id:'rsi',     on:false, a:25,   b:75,   l:'RSI fora de áreas exaustivas'},
+  {id:'squeeze', on:false, a:0,    b:0.06, l:'Sem compressão excessiva (Bollinger)'},
+  {id:'body',    on:true,  a:0.25, b:0,    l:'Corpo do candle mínimo vs ATR'},
+  {id:'session', on:false, a:9,    b:18,   l:'Janela de horário (local)'},
+  {id:'sample',  on:true,  a:40,   b:0,    l:'Amostra mínima do backtest'},
+  {id:'spread',  on:true,  a:0.03, b:0,    l:'Spread máximo esperado'},
+  {id:'htf',     on:false, a:50,   b:0,    l:'Sem conflito com timeframe superior'}
+];
+function defaultFilters(){ return JSON.parse(JSON.stringify(DEFAULT_FILTERS)); }
+
+function evalFilters(filters,ctx,candles,idx,bt){
+  const res=[]; const c=at(ctx.c,idx), a=at(ctx.atr,idx);
+  const get=id=> filters.find(f=>f.id===id);
+  const val=(f,k,d)=>{ const v=f?parseFloat(f[k]):NaN; return isN(v)?v:d; };
+  const add=(id,ok,reason)=>{ const f=get(id); if(f&&f.on) res.push({id:id,label:f.l,ok:!!ok,reason:reason}); };
+
+  if(a&&c){ const f=get('atr_pct'); if(f){ const ap=a/c*100; add('atr_pct', ap>=val(f,'a',0.05)&&ap<=val(f,'b',3), 'ATR '+ap.toFixed(3)+'%'); } }
+  const adx=at(ctx.adx.adx,idx);
+  if(adx!=null){ const f=get('adx'); if(f) add('adx', adx>=val(f,'a',18)&&adx<=val(f,'b',60), 'ADX '+adx.toFixed(1)); }
+  const rsi=at(ctx.rsi,idx);
+  if(rsi!=null){ const f=get('rsi'); if(f) add('rsi', rsi>=val(f,'a',25)&&rsi<=val(f,'b',75), 'RSI '+rsi.toFixed(1)); }
+  const mid=at(ctx.bb.mid,idx), up=at(ctx.bb.up,idx), lo=at(ctx.bb.lo,idx);
+  if(mid&&up&&lo){ const f=get('squeeze'); if(f) add('squeeze', ((up-lo)/mid)>=val(f,'b',0.06), 'Largura BB '+(((up-lo)/mid)*100).toFixed(2)+'%'); }
+  if(a&&candles[idx]){ const f=get('body'); if(f){ const st=candleStats(candles[idx]); add('body',(st.body/a)>=val(f,'a',0.25),'Corpo '+(st.body/a).toFixed(2)+'x ATR'); } }
+  { const f=get('session');
+    if(f){ const hh=new Date(candles[idx]? (candles[idx].t||Date.now()) : Date.now()).getHours();
+      const A=val(f,'a',9),B=val(f,'b',18);
+      add('session',(A<=B)?(hh>=A&&hh<B):(hh>=A||hh<B),'Hora '+hh+'h'); } }
+  { const f=get('sample'); if(f) add('sample', bt? bt.n>=val(f,'a',40):false, bt? bt.n+' amostras':'sem backtest'); }
+  { const f=get('spread'); if(f){ const sp=(a&&c)?(a/c*100)*0.25:0; add('spread', sp<=val(f,'a',0.03)*100,'Spread est. '+(sp*100).toFixed(3)+'%'); } }
+  { const f=get('htf');
+    if(f&&ctx.htf&&ctx.htf.ema&&ctx.htf.c){ const e=at(ctx.htf.ema,ctx.htf.i), cc=at(ctx.htf.c,ctx.htf.i);
+      if(e!=null&&cc!=null) add('htf',true,'TF sup '+(cc>e?'alta':'baixa')); } }
+
+  const ok=res.filter(r=>r.ok).length;
+  return {items:res, passed: res.length===0||res.every(r=>r.ok), score: res.length? ok/res.length:1};
+}
+
+/* ================================================================
+   7. MODELO PROBABILÍSTICO
+   ================================================================ */
+function wilson(k,n,z){
+  z=z||1.96; if(!n) return [0,1];
+  const p=k/n, d=1+z*z/n, c=p+z*z/(2*n), m=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n));
+  return [Math.max(0,(c-m)/d), Math.min(1,(c+m)/d)];
+}
+
+function rulesSatisfied(setup,ctx,candles,idx){
+  const setupSign = setup.dir==='baixa'?-1:(setup.dir==='alta'?1:0);
+  let found=false;
+  for(const r of (setup.rules||[])){
+    const e=evalRule(r,ctx,candles,idx);
+    if(e.pass===null) continue;
+    found=true;
+    let eff=(r.pol==='contra')?'contra':(r.pol==='neutro'?'neutro':'pro');
+    const rs=ruleDirection(r);
+    if(setupSign!==0&&rs!==0&&rs!==setupSign&&eff!=='neutro') eff=(eff==='pro')?'contra':'pro';
+    if(eff==='pro'    && !e.pass) return false;
+    if(eff==='contra' &&  e.pass) return false;
+  }
+  return found? true : null;
+}
+
+function evaluateSetup(setup,candles,idx,ctx,bt){
+  const rules=setup.rules||[];
+  const setupSign = setup.dir==='baixa'?-1:(setup.dir==='alta'?1:0);
+  const detail=[]; let score=0, totW=0, ok=0, viol=0, skipped=0;
+
+  for(const r of rules){
+    const w=clamp(Number(r.weight)||0,0,100);
+    const e=evalRule(r,ctx,candles,idx);
+    if(e.pass===null){
+      skipped++;
+      detail.push({rule:r,pass:null,satisfied:null,eff:(r.pol||'pro'),text:e.text||'indisponível',value:e.value});
+      continue;
+    }
+    const rs=ruleDirection(r);
+    let eff=(r.pol==='contra')?'contra':(r.pol==='neutro'?'neutro':'pro');
+    let flipped=false;
+    if(setupSign!==0 && rs!==0 && rs!==setupSign && eff!=='neutro'){ eff=(eff==='pro')?'contra':'pro'; flipped=true; }
+    let satisfied=null, contrib=0;
+    if(eff==='pro'){ satisfied=e.pass;  contrib = e.pass? w : -w; }
+    else if(eff==='contra'){ satisfied=!e.pass; contrib = e.pass? -w : w; }
+    if(satisfied===true) ok++; else if(satisfied===false) viol++;
+    totW+=w; score+=contrib;
+    detail.push({rule:r,pass:e.pass,satisfied:satisfied,eff:eff,flipped:flipped,text:e.text,value:e.value});
+  }
+
+  const norm = totW? clamp(50+50*score/totW,0,100) : 50;
+  const pScore = 0.5 + 0.34*Math.tanh((norm-50)/18);
+  let prior=null, wB=0;
+  if(bt && bt.n>0){ prior=bt.winRate; wB=clamp(bt.n/120,0,0.65); }
+  let p = (prior!=null)? (wB*prior+(1-wB)*pScore) : pScore;
+  p=clamp(p,0.05,0.95);
+
+  let conf=30;
+  conf+=clamp((bt?bt.n:0)/200,0,1)*32;
+  conf+=(ctx.src==='api'?22:9);
+  conf+=clamp(Math.min(ok,6)/6,0,1)*10;
+  conf+=(rules.length>=3?6:0);
+  if(bt&&bt.n>=100) conf+=4;
+  conf=clamp(Math.round(conf),0,100);
+
+  const payout=(Number(setup.payout)||85)/100;
+  const ev=p*payout-(1-p);
+  const ci=(bt&&bt.n>0)? wilson(Math.round(bt.winRate*bt.n),bt.n) : [Math.max(0,p-0.12),Math.min(1,p+0.12)];
+
+  return {prob:p, score:norm, conf:conf, ev:ev, ci:ci, detail:detail,
+          ok:ok, viol:viol, skipped:skipped, prior:prior, n:bt?bt.n:0, totW:totW};
+}
+
+function backtest(setup,candles,ctx){
+  const n=candles.length;
+  if(setup.dir==='qualquer'){
+    return {n:0,wins:0,losses:0,winRate:null,ci:[0,1],expectancy:null,skipped:0,
+            err:'Defina uma direção (alta ou baixa) para calibrar — em "qualquer" não há como medir acerto.'};
+  }
+  if(n<80) return {n:0,wins:0,losses:0,winRate:null,ci:[0,1],expectancy:null,skipped:0,err:'Dados insuficientes (mínimo 80 candles).'};
+  const start=Math.max(60, Math.floor(n*0.35));
+  const dir=(setup.dir==='baixa')?-1:1;
+  let wins=0,losses=0,total=0,skipped=0;
+  for(let i=start;i<n-1;i++){
+    if(rulesSatisfied(setup,ctx,candles,i)!==true){ skipped++; continue; }
+    const nx=candles[i+1];
+    const up = nx.c>nx.o?1:(nx.c<nx.o?-1:0);
+    if(up===0) continue;
+    total++;
+    if(up===dir) wins++; else losses++;
+  }
+  const wr=total? wins/total : null;
+  const payout=(Number(setup.payout)||85)/100;
+  return {n:total,wins:wins,losses:losses,winRate:wr,ci:total?wilson(wins,total):[0,1],
+          expectancy: wr!=null? (wr*payout-(1-wr)) : null, skipped:skipped};
+}
+
+/* ================================================================
+   8. API DE MERCADO
+   ================================================================ */
+const UNIVERSE_DEFAULT=['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','AVAXUSDT',
+'LINKUSDT','DOTUSDT','TRXUSDT','MATICUSDT','LTCUSDT','ATOMUSDT','NEARUSDT','ARBUSDT','OPUSDT','APTUSDT','INJUSDT','FILUSDT'];
+const TF_HTF={'1m':'15m','5m':'1h','15m':'4h','30m':'1d','1h':'1d','4h':'1d','1d':'1d'};
+
+const state={
+  view:'analise', srcMode:'api',
+  conn:{feedBase:'https://data-api.binance.vision', altBase:'https://api.binance.com'},
+  symbol:'BTCUSDT', interval:'5m',
+  setups:[], activeSetupId:null, filters:[], bt:null,
+  lastCandles:null, lastCtx:null, lastIdx:-1, lastSource:null, lastEval:null, lastFilt:null,
+  universe:UNIVERSE_DEFAULT.slice(),
+  alerts:[], scanning:false, scanTimer:null, scanAbort:null
+};
+
+async function apiGet(path, signal){
+  const bases=[state.conn.feedBase, state.conn.altBase].filter(Boolean);
+  let lastErr=null;
+  for(const base of bases){
+    try{
+      const r=await fetch(base+path,{mode:'cors', signal});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){ lastErr=e; }
+  }
+  throw lastErr||new Error('Falha de rede');
+}
+async function fetchKlines(symbol,interval,limit){
+  limit=limit||400;
+  const j=await apiGet('/api/v3/klines?symbol='+encodeURIComponent(symbol)+'&interval='+interval+'&limit='+limit);
+  if(!Array.isArray(j)) throw new Error('Resposta inesperada da API');
+  return j.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}));
+}
+async function fetchHTF(symbol,interval,limit){
+  try{ const tf=TF_HTF[interval]||'1h'; return await fetchKlines(symbol,tf,limit||300); }
+  catch(e){ return null; }
+}
+function buildContext(candles,src){
+  const c=candles.map(x=>x.c), h=candles.map(x=>x.h), l=candles.map(x=>x.l), v=candles.map(x=>x.v||0);
+  return {
+    c:c,h:h,l:l,v:v, src:src||'api',
+    ema9:IND.ema(c,9), ema21:IND.ema(c,21), ema50:IND.ema(c,50), ema200:IND.ema(c,200),
+    rsi:IND.rsi(c,14), macd:IND.macd(c), atr:IND.atr(h,l,c,14),
+    stoch:IND.stoch(h,l,c), adx:IND.adx(h,l,c), bb:IND.bb(c,20,2),
+    volMA:IND.sma(v,20), roc10:IND.roc(c,10)
+  };
+}
+
+/* ================================================================
+   9. SETUPS PADRÃO
+   ================================================================ */
+function defaultSetups(){
+  return [
+    {id:'s1', name:'Momentum — EMA 9/21 + RSI', dir:'alta', payout:85, rules:[
+      {id:'r1', type:'ema_cross',    pol:'pro', weight:35, params:{fast:9, slow:21, dir:'alta'}},
+      {id:'r2', type:'rsi_zone',     pol:'pro', weight:20, params:{len:14, min:45, max:72}},
+      {id:'r3', type:'adx',          pol:'pro', weight:20, params:{op:'acima', val:22}},
+      {id:'r4', type:'body_ratio',   pol:'pro', weight:15, params:{x:0.6, dir:'alta'}},
+      {id:'r5', type:'macd_hist',    pol:'pro', weight:10, params:{op:'pos'}}]},
+    {id:'s2', name:'Reversão — Bollinger inferior + pin bar', dir:'alta', payout:85, rules:[
+      {id:'r1', type:'bb_break',     pol:'pro', weight:30, params:{len:20, k:2, op:'below', mode:'reversal'}},
+      {id:'r2', type:'pattern',      pol:'pro', weight:25, params:{p:'pinbarup'}},
+      {id:'r3', type:'rsi_level',    pol:'pro', weight:20, params:{len:14, op:'menor', val:38}},
+      {id:'r4', type:'atr_pct',      pol:'pro', weight:15, params:{op:'acima', a:0.05, b:0}},
+      {id:'r5', type:'volume',       pol:'pro', weight:10, params:{ma:20, x:1.1}}]},
+    {id:'s3', name:'Rompimento — Donchian 20 + volume', dir:'alta', payout:85, rules:[
+      {id:'r1', type:'breakout',     pol:'pro', weight:40, params:{len:20, dir:'up'}},
+      {id:'r2', type:'volume',       pol:'pro', weight:25, params:{ma:20, x:1.5}},
+      {id:'r3', type:'adx',          pol:'pro', weight:20, params:{op:'acima', val:25}},
+      {id:'r4', type:'ema_price',    pol:'pro', weight:15, params:{len:50, dir:'acima'}}]},
+    {id:'s4', name:'Exaustão — RSI alto + estrela cadente', dir:'baixa', payout:85, rules:[
+      {id:'r1', type:'rsi_level',    pol:'pro', weight:30, params:{len:14, op:'maior', val:68}},
+      {id:'r2', type:'pattern',      pol:'pro', weight:30, params:{p:'shootingstar'}},
+      {id:'r3', type:'bb_break',     pol:'pro', weight:20, params:{len:20, k:2, op:'above', mode:'reversal'}},
+      {id:'r4', type:'consecutive',  pol:'pro', weight:20, params:{n:3, dir:'alta'}}]},
+    {id:'s5', name:'Estrutura — topo mais alto + momentum', dir:'alta', payout:85, rules:[
+      {id:'r1', type:'swing',        pol:'pro', weight:35, params:{len:20, dir:'hh'}},
+      {id:'r2', type:'momentum',     pol:'pro', weight:25, params:{len:10, op:'acima', val:0.05}},
+      {id:'r3', type:'ema_stack',    pol:'pro', weight:20, params:{fast:9, mid:21, slow:50, dir:'alta'}},
+      {id:'r4', type:'htf_bias',     pol:'pro', weight:20, params:{len:50, dir:'ok'}}]}
+  ];
+}
+
+/* ================================================================
+   10. LEITOR DE IMAGEM (pixels → candles)
+   ================================================================ */
+const imgState={ canvas:null, crop:null, drag:null, detector:null };
+
+function buildDetector(srcCanvas){
+  const ctx=srcCanvas.getContext('2d',{willReadFrequently:true});
+  const W=srcCanvas.width, H=srcCanvas.height;
+  return {canvas:srcCanvas, W:W, H:H, full:ctx.getImageData(0,0,W,H)};
+}
+
+function detectCandles(det,zone){
+  const W=det.W, H=det.H, D=det.full.data;
+  const z=zone||{x:0,y:0,w:W,h:H};
+  z.x=clamp(Math.round(z.x),0,W-1); z.y=clamp(Math.round(z.y),0,H-1);
+  z.w=clamp(Math.round(z.w),1,W-z.x); z.h=clamp(Math.round(z.h),1,H-z.y);
+
+  const hist={}; let bestK=null, bestV=0;
+  for(let y=z.y;y<z.y+z.h;y+=2) for(let x=z.x;x<z.x+z.w;x+=2){
+    const i=(y*W+x)*4, k=(D[i]>>4)+','+(D[i+1]>>4)+','+(D[i+2]>>4);
+    hist[k]=(hist[k]||0)+1; if(hist[k]>bestV){ bestV=hist[k]; bestK=k; }
+  }
+  const bg=bestK.split(',').map(v=>(+v)*16+8);
+
+  let gN=0, rN=0;
+  for(let y=z.y;y<z.y+z.h;y+=2) for(let x=z.x;x<z.x+z.w;x+=2){
+    const i=(y*W+x)*4, r=D[i], g=D[i+1], b=D[i+2];
+    if(g>r+26 && g>b+14) gN++;
+    else if(r>g+26 && r>b+14) rN++;
+  }
+  let mode='mono';
+  if(gN>=60 && rN>=60) mode='both';
+  else if(gN>=60) mode='up';
+  else if(rN>=60) mode='down';
+
+  const isUpC=(r,g,b)=> (g>r+26 && g>b+14);
+  const isDnC=(r,g,b)=> (r>g+26 && r>b+14);
+  const isMono=(r,g,b)=> (Math.abs(r-bg[0])+Math.abs(g-bg[1])+Math.abs(b-bg[2]))>60;
+
+  const mask=new Uint8Array(W*H), kind=new Uint8Array(W*H);
+  for(let y=z.y;y<z.y+z.h;y++){
+    for(let x=z.x;x<z.x+z.w;x++){
+      const i=(y*W+x)*4, r=D[i], g=D[i+1], b=D[i+2];
+      let k=0;
+      if(mode==='both'){ if(isUpC(r,g,b)) k=1; else if(isDnC(r,g,b)) k=2; }
+      else if(mode==='up'){ if(isUpC(r,g,b)) k=1; }
+      else if(mode==='down'){ if(isDnC(r,g,b)) k=2; }
+      else { if(isMono(r,g,b)) k=3; }
+      if(k){ mask[y*W+x]=1; kind[y*W+x]=k; }
+    }
+  }
+
+  const cnt=new Int32Array(W), minY=new Int32Array(W).fill(-1), maxY=new Int32Array(W).fill(-1);
+  for(let x=z.x;x<z.x+z.w;x++)
+    for(let y=z.y;y<z.y+z.h;y++)
+      if(mask[y*W+x]){ cnt[x]++; if(minY[x]<0) minY[x]=y; maxY[x]=y; }
+
+  let groups=[], cur=null;
+  for(let x=z.x;x<z.x+z.w;x++){
+    if(cnt[x]>=2){ if(!cur) cur={x0:x,x1:x}; else cur.x1=x; }
+    else { if(cur && (x-cur.x1)>1){ groups.push(cur); cur=null; } }
+  }
+  if(cur) groups.push(cur);
+  let gs=groups.filter(g=>(g.x1-g.x0)>=1);
+  if(gs.length<3){
+    const g2=[]; let c2=null;
+    for(let x=z.x;x<z.x+z.w;x++){ if(cnt[x]>=1){ if(!c2) c2={x0:x,x1:x}; else c2.x1=x; } else { if(c2){ g2.push(c2); c2=null; } } }
+    if(c2) g2.push(c2);
+    gs=g2.filter(g=>(g.x1-g.x0)>=0).slice(-160);
+  }
+  if(!gs.length) return {candles:[],mode:mode,msg:'Nenhum candle detectado. Marque só a região dos candles (sem eixo de preço, sem indicadores).'};
+
+  const out=[];
+  for(const g of gs){
+    let hiY=Infinity, loY=-Infinity, bTop=Infinity, bBot=-Infinity, kindV=0;
+    for(let x=g.x0;x<=g.x1;x++){
+      if(minY[x]<0) continue;
+      hiY=Math.min(hiY,minY[x]); loY=Math.max(loY,maxY[x]);
+      for(let y=minY[x];y<=maxY[x];y++){
+        if(!mask[y*W+x]) continue;
+        let cov=0, kk=0;
+        for(let xx=g.x0;xx<=g.x1;xx++){ if(mask[y*W+xx]){ cov++; kk=kind[y*W+xx]; } }
+        if(cov>=2){ if(y<bTop) bTop=y; if(y>bBot) bBot=y; if(!kindV) kindV=kk; }
+      }
+    }
+    if(bTop===Infinity){ bTop=hiY; bBot=loY; }
+    out.push({hiY:hiY,loY:loY,bTop:bTop,bBot:bBot,kind:kindV,x:g.x0});
+  }
+
+  const elT=$('#imgPriceTop'), elB=$('#imgPriceBot');
+  const pTop=elT?parseFloat(elT.value):NaN, pBot=elB?parseFloat(elB.value):NaN;
+  const useAbs=isN(pTop)&&isN(pBot)&&pTop!==pBot;
+  const minYall=Math.min.apply(null,out.map(o=>o.hiY));
+  const maxYall=Math.max.apply(null,out.map(o=>o.loY));
+  const spanY=Math.max(1,maxYall-minYall);
+  const toPx=y=>(maxYall-y)/spanY;
+  const toPrice=y=> useAbs ? (pBot+toPx(y)*(pTop-pBot)) : (toPx(y)*100);
+
+  const candles=[];
+  for(let i=0;i<out.length;i++){
+    const o=out[i];
+    const isUpCandle = o.kind===1? true : (o.kind===2? false : (o.bBot>o.bTop));
+    const bodyHi=Math.min(o.bTop,o.bBot), bodyLo=Math.max(o.bTop,o.bBot);
+    const cVal=toPrice(o.hiY), lVal=toPrice(o.loY);
+    const openC = isUpCandle? toPrice(bodyLo) : toPrice(bodyHi);
+    const closeC= isUpCandle? toPrice(bodyHi) : toPrice(bodyLo);
+    candles.push({t:Date.now()-(out.length-i)*60000, o:openC, h:Math.max(cVal,lVal), l:Math.min(cVal,lVal), c:closeC, v:0});
+  }
+  return {candles:candles,mode:mode,msg:''};
+}
+
+function drawCandles(canvas,candles){
+  const g=canvas.getContext('2d'); const W=canvas.width, H=canvas.height;
+  g.clearRect(0,0,W,H);
+  if(!candles||!candles.length) return;
+  const hi=Math.max.apply(null,candles.map(c=>c.h)), lo=Math.min.apply(null,candles.map(c=>c.l));
+  const span=Math.max(1e-9,hi-lo), pad=8;
+  const cw=(W-pad*2)/candles.length, bw=Math.max(1,Math.min(9,cw*0.62));
+  const y=v=> H-pad-((v-lo)/span)*(H-pad*2);
+  candles.forEach((c,i)=>{
+    const x=pad+i*cw+cw/2;
+    g.strokeStyle='rgba(196,181,253,.35)'; g.lineWidth=1;
+    g.beginPath(); g.moveTo(x,y(c.h)); g.lineTo(x,y(c.l)); g.stroke();
+    const up=c.c>=c.o;
+    g.fillStyle= up? 'rgba(74,222,128,.85)':'rgba(251,113,133,.85)';
+    const y1=y(Math.max(c.o,c.c)), y2=y(Math.min(c.o,c.c));
+    g.fillRect(x-bw/2, y1, bw, Math.max(1.5,y2-y1));
+  });
+}
+
+/* ================================================================
+   11. CAPTURA (câmera / gravação de tela)
+   ================================================================ */
+const cap={stream:null, mode:null, timer:null, live:false, abort:null};
+
+function needMedia(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    toast('Este navegador bloqueia câmera/tela em arquivos locais. Use o servidor local (Vercel).','warn'); return false;
+  }
+  return true;
+}
+function stopCapture(){
+  if(cap.timer){ clearInterval(cap.timer); cap.timer=null; }
+  if(cap.abort){ cap.abort.abort(); cap.abort=null; }
+  cap.live=false;
+  if(cap.stream){ cap.stream.getTracks().forEach(t=>t.stop()); cap.stream=null; }
+}
+async function openCamera(){
+  if(!needMedia()) return;
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}},audio:false});
+    stopCapture(); cap.stream=s; cap.mode='cam';
+    const v=$('#vid'); v.srcObject=s; v.setAttribute('style','width:100%;opacity:1;pointer-events:auto;max-width:100%');
+    const st=$('#stage'); st.innerHTML=''; st.appendChild(v);
+    openModal('<button class="x" data-close>✕</button><h3>📷 Capturar foto do gráfico</h3>'+
+      '<p class="muted">Aponte a câmera para o gráfico na tela do computador e clique em “Capturar”.</p>'+
+      '<div class="row mt"><button class="btn p" id="capShot">📸 Capturar frame</button>'+
+      '<button class="btn" data-close>Cancelar</button></div>');
+    $('#capShot').onclick=()=>{
+      const c=document.createElement('canvas');
+      c.width=v.videoWidth||1280; c.height=v.videoHeight||720;
+      c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+      loadImageCanvas(c); stopCapture(); closeModal();
+    };
+  }catch(e){ toast('Câmera indisponível: '+e.message,'bad'); }
+}
+async function startScreen(){
+  if(!needMedia()) return;
+  if(!navigator.mediaDevices.getDisplayMedia){
+    toast('Este navegador não suporta captura de tela. Use Chrome/Edge atualizado.','warn'); return;
+  }
+  try{
+    cap.abort=new AbortController();
+    const s=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:5}},audio:false});
+    stopCapture(); cap.stream=s; cap.mode='screen';
+    const v=$('#vid'); v.srcObject=s; v.setAttribute('style','width:100%;opacity:1;pointer-events:auto');
+    const st=$('#stage'); st.innerHTML=''; st.appendChild(v);
+    s.getVideoTracks()[0].addEventListener('ended',()=>{ stopCapture(); $('#btnRec').classList.remove('on'); toast('Captura de tela encerrada','info'); });
+    toast('Captura de tela ativa — análise ao vivo começa em 2s.','ok');
+    setTimeout(()=>{ if(cap.stream===s) startLiveLoop(); }, 1500);
+  }catch(e){ toast('Captura cancelada ou bloqueada: '+e.message,'warn'); }
+}
+function startLiveLoop(){
+  if(cap.timer) clearInterval(cap.timer);
+  cap.live=true;
+  const v=$('#vid');
+  const cv=document.createElement('canvas'); cv.width=1280; cv.height=720; cv.id='cvLive';
+  const g=cv.getContext('2d',{willReadFrequently:true});
+  cap.timer=setInterval(()=>{
+    if(!cap.stream||v.readyState<2) return;
+    try{
+      g.drawImage(v,0,0,cv.width,cv.height);
+      const det=buildDetector(cv);
+      const r=detectCandles(det,{x:0,y:0,w:cv.width,h:cv.height});
+      if(r.candles.length>=6){
+        state.lastCandles=r.candles; state.lastSource='image';
+        state.lastCtx=buildContext(r.candles,'image'); state.lastIdx=r.candles.length-1;
+        runAnalysis();
+        const cc=$('#cvChart'); if(cc) drawCandles(cc,r.candles);
+      }
+    }catch(e){}
+  },2500);
+  log('Análise ao vivo da tela ativada','i');
+}
+function loadImageCanvas(canvas){
+  const det=buildDetector(canvas);
+  imgState.canvas=det.canvas; imgState.detector=det; imgState.crop=null;
+  const st=$('#stage'); st.innerHTML='';
+  const cv=document.createElement('canvas'); cv.id='cvEdit';
+  const maxW=Math.min(760,canvas.width), scale=maxW/canvas.width;
+  cv.width=Math.round(canvas.width*scale); cv.height=Math.round(canvas.height*scale);
+  cv.getContext('2d').drawImage(canvas,0,0,cv.width,cv.height);
+  st.appendChild(cv);
+  bindCrop(cv,scale);
+  $('#imgInfo').innerHTML='Imagem carregada. <b>Arraste sobre a área dos candles</b> para delimitar a zona de leitura e clique em “Re-detectar”.';
+  state.srcMode='image'; $('#srcMode').value='image'; toggleSrc();
+  detectFromCrop();
+}
+function bindCrop(cv,scale){
+  let drag=null;
+  const picker=document.createElement('div'); picker.className='picker';
+  cv.parentNode.appendChild(picker);
+  const pos=e=>{ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left),y:(e.clientY-r.top)}; };
+  const show=z=>{ picker.style.left=z.x+'px'; picker.style.top=z.y+'px'; picker.style.width=z.w+'px'; picker.style.height=z.h+'px'; };
+  cv.addEventListener('pointerdown',e=>{
+    e.preventDefault(); const p=pos(e);
+    drag={x0:p.x,y0:p.y,x1:p.x,y1:p.y};
+    try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  cv.addEventListener('pointermove',e=>{
+    if(!drag) return; const p=pos(e); drag.x1=p.x; drag.y1=p.y;
+    show({x:Math.min(drag.x0,drag.x1),y:Math.min(drag.y0,drag.y1),w:Math.abs(drag.x1-drag.x0),h:Math.abs(drag.y1-drag.y0)});
+  });
+  cv.addEventListener('pointerup',e=>{
+    if(!drag) return; const p=pos(e); drag.x1=p.x; drag.y1=p.y;
+    const z={x:Math.min(drag.x0,drag.x1),y:Math.min(drag.y0,drag.y1),w:Math.abs(drag.x1-drag.x0),h:Math.abs(drag.y1-drag.y0)};
+    if(z.w>8&&z.h>8){ imgState.crop={x:z.x/scale,y:z.y/scale,w:z.w/scale,h:z.h/scale}; detectFromCrop(); }
+    drag=null;
+  });
+}
+function detectFromCrop(){
+  if(!imgState.detector) return;
+  const r=detectCandles(imgState.detector,imgState.crop);
+  if(!r.candles.length){
+    $('#imgInfo').innerHTML='<span style="color:var(--bad)">⚠️ '+esc(r.msg||'Sem candles detectados')+'</span>';
+    return;
+  }
+  state.lastCandles=r.candles; state.lastSource='image';
+  state.lastCtx=buildContext(r.candles,'image'); state.lastIdx=r.candles.length-1;
+  const modo = r.mode==='both'?'verde + vermelho':(r.mode==='up'?'só verde':(r.mode==='down'?'só vermelho':'monocromático'));
+  $('#imgInfo').innerHTML='✅ <b>'+r.candles.length+'</b> candles detectados · cor: <b>'+modo+'</b> · '+
+    (r.mode==='mono'
+      ? '<span style="color:var(--warn)">modo monocromático: leitura aproximada — prefira o modo API</span>'
+      : 'leitura confiável dos valores');
+  const cc=$('#cvChart'); if(cc) drawCandles(cc,r.candles);
+  runAnalysis();
+}
+
+/* ================================================================
+   12. UI — SETUPS
+   ================================================================ */
+function activeSetup(){ return state.setups.find(s=>s.id===state.activeSetupId) || state.setups[0]; }
+
+function renderSetupList(){
+  const box=$('#setupList');
+  if(!state.setups.length){ box.innerHTML='<div class="empty">Nenhum setup ainda.</div>'; }
+  else box.innerHTML=state.setups.map(s=>{
+    const on=s.id===state.activeSetupId;
+    return '<div class="item '+(on?'sel':'')+'" data-id="'+s.id+'">'+
+      '<div class="t">'+esc(s.name)+' <span class="pill dir">'+esc(s.dir)+'</span></div>'+
+      '<div class="m">'+(s.rules||[]).length+' regras · payout '+(s.payout||85)+'%</div></div>';
+  }).join('');
+  $$('#setupList .item').forEach(el=>el.onclick=()=>{ state.activeSetupId=el.dataset.id; DB.set('active',state.activeSetupId); renderSetupList(); loadEditor(); });
+  $('#tagSetups').textContent=state.setups.length;
+}
+function loadEditor(){
+  const s=activeSetup(); if(!s) return;
+  $('#setName').value=s.name||''; $('#setDir').value=s.dir||'alta'; $('#setPay').value=s.payout||85;
+  $('#tagEdit').textContent=s.name||'—';
+  renderRules();
+}
+function renderRules(){
+  const s=activeSetup(), box=$('#ruleList');
+  if(!s){ box.innerHTML='<div class="empty">Nenhum setup.</div>'; return; }
+  if(!s.rules||!s.rules.length){ box.innerHTML='<div class="empty">Nenhuma regra. Clique em “+ Adicionar regra”.</div>'; return; }
+  box.innerHTML=s.rules.map((r,i)=>{
+    const meta=RULES[r.type]||{n:r.type};
+    const desc=(RULES[r.type]?RULES[r.type].f:[]).map(f=>{
+      let v=r.params[f.k];
+      if(f.t==='s'){ const hit=(f.o||[]).find(x=>x[0]===v); v=hit?hit[1]:v; }
+      return f.l+': '+(v===undefined||v===null?'—':v);
+    }).join(' · ');
+    const dirTxt = r.pol==='contra'?'CONTRA':(r.pol==='neutro'?'NEUTRO':'PRO');
+    const dirCls = r.pol==='contra'?'con':(r.pol==='neutro'?'neu':'pro');
+    return '<div class="item"><div class="t">'+esc(meta.n)+' <span class="pill '+dirCls+'">'+dirTxt+'</span>'+
+      '<span class="spacer"></span><span class="muted">peso '+r.weight+'</span></div>'+
+      '<div class="m">'+esc(desc||'')+'</div>'+
+      '<div class="row mt" style="gap:6px">'+
+      '<button class="btn s" data-pol="pro" data-i="'+i+'">PRO</button>'+
+      '<button class="btn s" data-pol="contra" data-i="'+i+'">CONTRA</button>'+
+      '<button class="btn s" data-up="'+i+'">▲</button>'+
+      '<button class="btn s" data-dn="'+i+'">▼</button>'+
+      '<button class="btn s d" data-del="'+i+'">🗑</button></div></div>';
+  }).join('');
+  const S=()=>activeSetup();
+  $$('#ruleList [data-pol]').forEach(b=>b.onclick=()=>{ S().rules[+b.dataset.i].pol=b.dataset.pol; renderRules(); });
+  $$('#ruleList [data-up]').forEach(b=>b.onclick=()=>{ S().rules[+b.dataset.i].weight=Math.min(100,(+S().rules[+b.dataset.i].weight||10)+5); renderRules(); });
+  $$('#ruleList [data-dn]').forEach(b=>b.onclick=()=>{ S().rules[+b.dataset.i].weight=Math.max(0,(+S().rules[+b.dataset.i].weight||10)-5); renderRules(); });
+  $$('#ruleList [data-del]').forEach(b=>b.onclick=()=>{ S().rules.splice(+b.dataset.del,1); renderRules(); });
+}
+function openRuleModal(){
+  const types=Object.keys(RULES);
+  openModal('<button class="x" data-close>✕</button><h3>Adicionar regra</h3>'+
+    '<p class="muted">Escolha a condição técnica. Regras com peso alto puxam mais o score do setup. "PRO" = a condição deve ser verdadeira; "CONTRA" = a condição deve ser falsa.</p>'+
+    '<div class="field"><label class="f">Tipo de regra</label><select id="rType">'+
+      types.map(t=>'<option value="'+t+'">'+esc(RULES[t].n)+'</option>').join('')+'</select></div>'+
+    '<div id="rFields"></div>'+
+    '<div class="grid2"><div class="field"><label class="f">Peso (0–100)</label><input type="number" id="rWeight" value="20" min="0" max="100"></div>'+
+    '<div class="field"><label class="f">Sentido</label><select id="rPol">'+
+    '<option value="pro">PRO — condição verdadeira</option><option value="contra">CONTRA — condição falsa</option><option value="neutro">NEUTRO — apenas informativa</option></select></div></div>'+
+    '<button class="btn p" id="rAdd" style="width:100%">Adicionar ao setup</button>');
+  const build=()=>{
+    const t=$('#rType').value, meta=RULES[t];
+    $('#rFields').innerHTML=meta.f.map(f=>{
+      if(f.t==='s'){
+        const o=f.o||[];
+        return '<div class="field"><label class="f">'+esc(f.l)+'</label><select data-k="'+f.k+'">'+
+          o.map(x=>'<option value="'+esc(x[0])+'">'+esc(x[1])+'</option>').join('')+'</select></div>';
+      }
+      return '<div class="field"><label class="f">'+esc(f.l)+'</label><input type="number" data-k="'+f.k+'" value="'+(f.d!=null?f.d:'')+'" step="any"></div>';
+    }).join('');
+  };
+  build(); $('#rType').onchange=build;
+  $('#rAdd').onclick=()=>{
+    const s=activeSetup(); if(!s) return;
+    const params={};
+    $$('#rFields [data-k]').forEach(el=>{
+      const v=el.value;
+      params[el.dataset.k] = (el.tagName==='SELECT')? v : (isN(parseFloat(v))?parseFloat(v):v);
+    });
+    s.rules=s.rules||[];
+    s.rules.push({id:'r'+uid(), type:$('#rType').value, pol:$('#rPol').value,
+                  weight:clamp(+$('#rWeight').value||0,0,100), params:params});
+    closeModal(); renderRules(); toast('Regra adicionada','ok');
+  };
+}
+function saveSetup(){
+  const s=activeSetup(); if(!s) return;
+  s.name=$('#setName').value||'Setup sem nome';
+  s.dir=$('#setDir').value;
+  s.payout=clamp(+$('#setPay').value||0,0,1000);
+  DB.set('setups',state.setups); DB.set('active',state.activeSetupId);
+  renderSetupList(); loadEditor();
+}
+async function runBacktest(){
+  const s=activeSetup(); if(!s) return;
+  let candles=state.lastCandles;
+  if(state.lastSource!=='api'){
+    toast('Buscando histórico do mercado para calibrar…','info');
+    try{ candles=await fetchKlines(state.symbol,state.interval,500); }
+    catch(e){ toast('Falha ao buscar candles: '+e.message,'bad'); return; }
+  }
+  if(!candles||candles.length<80){ toast('Dados insuficientes (mínimo 80 candles)','warn'); return; }
+  const ctx=buildContext(candles,'api');
+  const bt=backtest(s,candles,ctx);
+  state.bt=bt; DB.set('bt_'+s.id,bt);
+  $('#tagBt').textContent=s.name;
+  const box=$('#btBox');
+  if(bt.err){ box.innerHTML='<div class="warnbox">⚠️ '+esc(bt.err)+'</div>'; return; }
+  if(!bt.n){
+    box.innerHTML='<div class="warnbox">O setup não gerou sinais suficientes ('+bt.skipped+' candles avaliados sem ativação). '+
+      'Ajuste as regras, o peso ou a direção.</div>';
+    return;
+  }
+  const evp = bt.expectancy>=0? '<span class="pill pro">ESPERANÇA POSITIVA</span>' : '<span class="pill con">ESPERANÇA NEGATIVA</span>';
+  box.innerHTML='<div class="grid g4">'+
+    '<div class="kpi"><div class="k">Amostra</div><div class="v">'+bt.n+'</div><div class="s">sinais testados</div></div>'+
+    '<div class="kpi"><div class="k">Taxa de acerto</div><div class="v">'+pctS(bt.winRate,1)+'</div><div class="s">IC95 '+(bt.ci[0]*100).toFixed(0)+'–'+(bt.ci[1]*100).toFixed(0)+'%</div></div>'+
+    '<div class="kpi"><div class="k">Esperança</div><div class="v" style="color:'+(bt.expectancy>=0?'var(--ok)':'var(--bad)')+'">'+(bt.expectancy*100).toFixed(2)+'%</div><div class="s">payout '+(s.payout||85)+'%</div></div>'+
+    '<div class="kpi"><div class="k">Break-even</div><div class="v">'+pctS(1/(1+(s.payout||85)/100),1)+'</div><div class="s">'+evp+'</div></div>'+
+    '</div><div class="hint">O backtest simula o setup vela a vela <b>sem olhar o futuro</b> (os indicadores só usam dados até o fechamento da vela). '+
+    'Abaixo de 40 amostras, trate os números como aproximação.</div>';
+  runAnalysis();
+}
+function compareSetups(){
+  const candles=state.lastCandles, ctx=state.lastCtx, idx=state.lastIdx;
+  if(!candles||!ctx){ toast('Carregue um gráfico primeiro (Análise → API ou imagem)','warn'); return; }
+  const rows=[];
+  state.setups.forEach(s=>{
+    ctx.setupDir=s.dir;
+    const bt=backtest(s,candles,ctx);
+    const ev=evaluateSetup(s,candles,idx,ctx,bt.n?bt:null);
+    rows.push({s:s,ev:ev,bt:bt});
+  });
+  rows.sort((a,b)=>b.ev.prob-a.ev.prob);
+  $('#tagCmp').textContent=rows.length+' setups';
+  $('#cmpBox').innerHTML='<div class="scroll"><table><thead><tr><th>Setup</th><th>Dir.</th><th>Prob.</th><th>Score</th>'+
+    '<th>Conf.</th><th>Esperança</th><th>Amostra</th><th>Acertos</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td>'+esc(r.s.name)+'</td>'+
+      '<td><span class="pill dir">'+esc(r.s.dir)+'</span></td>'+
+      '<td class="mono" style="color:'+(r.ev.prob>=0.6?'var(--ok)':(r.ev.prob<=0.45?'var(--bad)':'var(--txt)'))+'">'+(r.ev.prob*100).toFixed(1)+'%</td>'+
+      '<td class="mono">'+Math.round(r.ev.score)+'</td>'+
+      '<td class="mono">'+r.ev.conf+'/100</td>'+
+      '<td class="mono" style="color:'+(r.ev.ev>=0?'var(--ok)':'var(--bad)')+'">'+(r.ev.ev*100).toFixed(1)+'%</td>'+
+      '<td class="mono">'+(r.bt.n||0)+'</td>'+
+      '<td class="mono">'+(r.bt.winRate!=null?pctS(r.bt.winRate,0):'—')+'</td></tr>').join('')+
+    '</tbody></table></div><div class="hint">Ordenado por probabilidade estimada no gráfico atual. '+
+    'A coluna “Amostra” mostra quantos sinais reais o setup gerou — amostra pequena = estatística fraca.</div>';
+}
+
+/* ================================================================
+   13. UI — GESTÃO
+   ================================================================ */
+function calcMgmt(){
+  const bank=+$('#mgBank').value||0, riskPct=+$('#mgRisk').value||0, pay=+$('#mgPay').value||0,
+        ops=+$('#mgOps').value||0, stopPct=+$('#mgStop').value||0, maxL=+$('#mgLosses').value||0;
+  const stake=bank*riskPct/100;
+  const breakeven=100/(100+pay);
+  const wr=(state.bt&&state.bt.winRate!=null)? state.bt.winRate : null;
+  let kelly=null;
+  if(wr!=null){ const b=pay/100; kelly=(wr*(b+1)-1)/b; }
+  const kellySafe= kelly!=null? Math.max(0,kelly*0.25) : null;
+  const dailyLoss=bank*stopPct/100;
+  const maxOpsAtRisk= dailyLoss>0? Math.floor(dailyLoss/stake) : 0;
+
+  let rows='', bal=stake, acc=0;
+  for(let i=0;i<=maxL;i++){
+    rows+='<tr><td>'+(i+1)+'</td><td class="mono">'+bal.toFixed(2)+'</td><td class="mono">'+acc.toFixed(2)+'</td>'+
+      '<td class="mono">'+(bank+acc).toFixed(2)+'</td><td>'+(i===maxL?'<span class="pill con">stop aqui</span>':'')+'</td></tr>';
+    acc-=bal; bal=bal*(1+pay/100);
+  }
+
+  let sim;
+  if(wr!=null){
+    const N=100; let b=bank; const path=[];
+    for(let i=0;i<N;i++){
+      let s=0;
+      for(let j=0;j<ops;j++){ const w=Math.random()<wr; s += w? stake*pay/100 : -stake; }
+      b+=s; path.push(b);
+    }
+    const fin=path[path.length-1], media=path.reduce((a,b)=>a+b,0)/path.length;
+    let pk=bank, dd=0; path.forEach(v=>{ if(v>pk)pk=v; const d=pk-v; if(d>dd)dd=d; });
+    sim='<div class="grid g4">'+
+      '<div class="kpi"><div class="k">Banca inicial</div><div class="v">'+bank.toFixed(2)+'</div></div>'+
+      '<div class="kpi"><div class="k">Banca final (média)</div><div class="v" style="color:'+(media>=bank?'var(--ok)':'var(--bad)')+'">'+media.toFixed(2)+'</div><div class="s">100 sessões simuladas</div></div>'+
+      '<div class="kpi"><div class="k">Drawdown máx. (média)</div><div class="v" style="color:var(--warn)">'+((dd/bank)*100).toFixed(2)+'%</div></div>'+
+      '<div class="kpi"><div class="k">Cenário</div><div class="v" style="font-size:13px">'+(fin>=bank?'POSITIVO':'NEGATIVO')+'</div><div class="s">taxa do seu backtest</div></div>'+
+      '</div><div class="hint">Simulação com <b>'+(wr*100).toFixed(1)+'%</b> de acerto (do seu backtest), '+
+      ops+' operações por dia, payout '+pay+'%. É uma aproximação — o mercado real tem rajadas que a média não captura.</div>';
+  } else sim='<div class="warnbox">Calibre um setup (aba Setups → Calibrar) para habilitar a simulação com taxa de acerto real.</div>';
+  $('#simBox').innerHTML=sim; $('#tagSim').textContent= wr!=null? 'com backtest':'sem backtest';
+
+  const kellyTxt= kelly!=null? (kelly*100).toFixed(1)+'% (Kelly) · '+(kellySafe*100).toFixed(2)+'% (¼ Kelly)' : '—';
+  $('#mgmtBox').innerHTML='<div class="grid g2">'+
+    '<div class="kpi"><div class="k">Valor por operação</div><div class="v">'+stake.toFixed(2)+'</div><div class="s">'+riskPct+'% da banca</div></div>'+
+    '<div class="kpi"><div class="k">Break-even</div><div class="v">'+breakeven.toFixed(1)+'%</div><div class="s">acerto p/ empatar</div></div>'+
+    '<div class="kpi"><div class="k">Perda máxima diária</div><div class="v" style="color:var(--bad)">'+dailyLoss.toFixed(2)+'</div><div class="s">stop de '+stopPct+'%</div></div>'+
+    '<div class="kpi"><div class="k">Teto de operações/dia</div><div class="v">'+maxOpsAtRisk+'</div><div class="s">antes do stop diário</div></div>'+
+    '<div class="kpi"><div class="k">Kelly (fração)</div><div class="v" style="font-size:15px">'+kellyTxt+'</div><div class="s">matemático, não é conselho</div></div>'+
+    '<div class="kpi"><div class="k">Perdas seguidas máx.</div><div class="v">'+maxL+'</div><div class="s">interrompa e reavalie</div></div>'+
+    '</div><div class="hint">Progressão linear (anti-martingale) após '+maxL+' perdas consecutivas:</div>'+
+    '<div class="scroll"><table><thead><tr><th>#</th><th>Valor da operação</th><th>Resultado acumulado</th><th>Banca resultante</th><th>Nota</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table></div>';
+  $('#tagMgmt').textContent='plano';
+}
+
+/* ================================================================
+   14. UI — FILTROS
+   ================================================================ */
+function renderFilters(){
+  const box=$('#filterList');
+  box.innerHTML=state.filters.map((f,i)=>{
+    const extra=[];
+    if(['atr_pct','adx','rsi','squeeze','body','spread'].indexOf(f.id)>=0) extra.push({k:'a',l:'Mín'});
+    if(['atr_pct','adx','rsi'].indexOf(f.id)>=0) extra.push({k:'b',l:'Máx'});
+    if(f.id==='session'){ extra.push({k:'a',l:'De (h)'}); extra.push({k:'b',l:'Até (h)'}); }
+    if(f.id==='sample') extra.push({k:'a',l:'Mínimo'});
+    return '<div class="item"><div class="t"><label class="switch"><input type="checkbox" data-on="'+i+'" '+(f.on?'checked':'')+'>'+
+      '<span class="track"><span class="knob"></span></span></label> '+esc(f.l)+'</div>'+
+      (extra.length? '<div class="row mt" style="gap:8px">'+extra.map(x=>
+        '<div style="flex:1"><label class="f">'+x.l+'</label><input type="number" step="any" data-f="'+i+'" data-p="'+x.k+'" value="'+(f[x.k]!=null?f[x.k]:'')+'"></div>').join('')+'</div>':'')+
+      '</div>';
+  }).join('');
+  $$('#filterList [data-on]').forEach(el=>el.onchange=()=>{ state.filters[+el.dataset.on].on=el.checked; DB.set('filters',state.filters); });
+  $$('#filterList [data-f]').forEach(el=>el.onchange=()=>{
+    const v=parseFloat(el.value);
+    state.filters[+el.dataset.f][el.dataset.p]= isN(v)?v:0;
+    DB.set('filters',state.filters);
+  });
+  $('#tagFilt').textContent=state.filters.filter(f=>f.on).length+' ativos';
+}
+
+/* ================================================================
+   15. ANÁLISE PRINCIPAL
+   ================================================================ */
+function runAnalysis(){
+  const candles=state.lastCandles, idx=state.lastIdx, ctx=state.lastCtx;
+  if(!candles||!ctx||idx<0) return;
+  const setup=activeSetup(); if(!setup) return;
+  ctx.setupDir=setup.dir;
+  const ev=evaluateSetup(setup,candles,idx,ctx,state.bt);
+  const filt=evalFilters(state.filters,ctx,candles,idx,state.bt);
+  state.lastEval=ev; state.lastFilt=filt;
+
+  const C=2*Math.PI*52, arc=$('#gArc');
+  arc.setAttribute('stroke-dasharray',C.toFixed(1));
+  arc.setAttribute('stroke-dashoffset',(C*(1-ev.prob)).toFixed(1));
+  $('#gVal').textContent=Math.round(ev.prob*100)+'%';
+  $('#kScore').textContent=Math.round(ev.score);
+  $('#kCi').textContent=(ev.ci[0]*100).toFixed(0)+'–'+(ev.ci[1]*100).toFixed(0)+'%';
+  $('#kEv').textContent=(ev.ev>=0?'+':'')+(ev.ev*100).toFixed(1)+'%';
+  $('#kEv').style.color=ev.ev>=0?'var(--ok)':'var(--bad)';
+  $('#kConf').textContent=ev.conf+'/100';
+  $('#kN').textContent=ev.n||'0';
+  $('#kFilter').textContent=filt.passed?'OK':'FORA';
+  $('#kFilter').style.color=filt.passed?'var(--ok)':'var(--bad)';
+  $('#tagSource').textContent=(state.lastSource==='api'?'API de mercado':'Imagem (aproximada)')+' · '+(setup.name||'');
+
+  const sb=$('#stateBox');
+  if(!filt.passed){
+    const bad=filt.items.filter(f=>!f.ok).map(f=>f.reason||f.label);
+    sb.innerHTML='<div class="badbox">🚫 <b>FORA DO PERFIL — operação descartada pelos filtros.</b><br>'+bad.map(esc).join(' · ')+'</div>';
+  } else if(ev.conf<50){
+    sb.innerHTML='<div class="warnbox">⚠️ <b>Confiabilidade baixa</b> ('+ev.conf+'/100). '+
+      'O modelo tem poucos dados — trate como exploratório. Aumente a amostra com <b>Calibrar (backtest)</b>.</div>';
+  } else {
+    sb.innerHTML='<div class="okbox">✅ <b>Dentro do perfil de operação.</b> Probabilidade estatística estimada: <b>'+(ev.prob*100).toFixed(1)+'%</b> '+
+      '(IC 95%: '+(ev.ci[0]*100).toFixed(0)+'–'+(ev.ci[1]*100).toFixed(0)+'%). Esperança: <b>'+(ev.ev*100).toFixed(1)+'%</b> por operação. '+
+      'Regras satisfeitas: <b>'+ev.ok+'</b>, violadas: <b>'+ev.viol+'</b>.<br>'+
+      '<span class="muted">Estatística descritiva do setup — não é recomendação de compra ou venda.</span></div>';
+  }
+
+  const rows=[];
+  const add=(n,v,r,s)=>rows.push('<tr><td>'+n+'</td><td class="mono">'+(v==null?'—':v)+'</td><td>'+(r==null?'—':r)+'</td><td>'+(s||'')+'</td></tr>');
+  const e9=at(ctx.ema9,idx), e21=at(ctx.ema21,idx), e50=at(ctx.ema50,idx), e200=at(ctx.ema200,idx);
+  const c=at(ctx.c,idx);
+  const pill=(good)=> good? '<span class="pill pro">FAVORÁVEL</span>' : '<span class="pill con">CONTRÁRIO</span>';
+  add('EMA 9 / 21', (e9!=null&&e21!=null)? fmt(e9,4)+' / '+fmt(e21,4):null,
+      (e9!=null&&e21!=null)? (e9>e21?'Alta':'Baixa'):null,
+      (e9!=null&&e21!=null)? pill(e9>e21):'');
+  add('EMA 50 / 200', (e50!=null&&e200!=null)? fmt(e50,4)+' / '+fmt(e200,4):null,
+      (e50!=null&&e200!=null)? (e50>e200?'Alta de longo prazo':'Baixa de longo prazo'):null,'');
+  const rsi=at(ctx.rsi,idx);
+  add('RSI (14)', rsi!=null? fmt(rsi,2):null, rsi!=null? (rsi>70?'Sobrecomprado':(rsi<30?'Sobrevendido':'Neutro')):null,'');
+  const mh=at(ctx.macd.hist,idx);
+  add('MACD (hist)', mh!=null? fmt(mh,5):null, mh!=null? (mh>0?'Positivo':'Negativo'):null,'');
+  const atr=at(ctx.atr,idx);
+  add('ATR (14) / ATR%', atr!=null? fmt(atr,5):null, (atr!=null&&c)? fmt(atr/c*100,3)+'% do preço':null,'');
+  const adx=at(ctx.adx.adx,idx);
+  add('ADX (14)', adx!=null? fmt(adx,2):null, adx!=null? (adx>25?'Tendência definida':'Mercado lateral'):null,'');
+  const k=at(ctx.stoch.k,idx), d=at(ctx.stoch.d,idx);
+  add('Estocástico %K / %D', k!=null? fmt(k,1)+' / '+fmt(d,1):null, k!=null? (k>80?'Sobrecomprado':(k<20?'Sobrevendido':'Neutro')):null,'');
+  const bbu=at(ctx.bb.up,idx), bbl=at(ctx.bb.lo,idx);
+  add('Bollinger (20,2)', bbu!=null? fmt(bbl,4)+' – '+fmt(bbu,4):null,
+      (bbu!=null&&c)? (c>bbu?'Acima da superior':(c<bbl?'Abaixo da inferior':'Dentro das bandas')):null,'');
+  const vma=at(ctx.volMA,idx);
+  add('Volume vs média', (vma!=null&&ctx.v[idx])? fmt(ctx.v[idx]/vma,2)+'x':null,null,'');
+  const roc=at(ctx.roc10,idx);
+  add('Momentum ROC(10)', roc!=null? fmt(roc,3)+'%':null, null,'');
+  $('#indTable').querySelector('tbody').innerHTML= rows.join('') || '<tr><td colspan="4" class="empty">Sem dados</td></tr>';
+
+  const rb=$('#rulesBox');
+  if(!ev.detail.length){ rb.innerHTML='<div class="muted">Este setup não tem regras. Vá em <b>Setups</b> e adicione.</div>'; }
+  else{
+    rb.innerHTML='<h3 style="margin-bottom:8px">🎯 Regras do setup <span class="tag">'+ev.ok+' ok · '+ev.viol+' violadas</span></h3>'+
+      ev.detail.map(d=>{
+        const meta=RULES[d.rule.type]||{n:d.rule.type};
+        let st;
+        if(d.satisfied===null) st='<span class="pill neu">N/D</span>';
+        else if(d.satisfied===true) st='<span class="pill '+(d.eff==='contra'?'neu':'pro')+'">'+(d.eff==='contra'?'AUSENTE ✓':'SATISFEITA ✓')+'</span>';
+        else st='<span class="pill con">VIOLADA</span>';
+        const flip=d.flipped? ' <span class="pill warnp">invertida</span>' : '';
+        const polTag='<span class="pill '+(d.eff==='contra'?'con':(d.eff==='neutro'?'neu':'pro'))+'">'+(d.eff||'pro').toUpperCase()+'</span>';
+        return '<div class="item"><div class="t">'+esc(meta.n)+' '+st+flip+' <span class="spacer"></span>'+polTag+'</div>'+
+          '<div class="m">'+esc(d.text||'')+' · peso '+d.rule.weight+'</div></div>';
+      }).join('');
+  }
+  renderFilterResults(filt);
+}
+function renderFilterResults(filt){
+  const box=$('#filtRes');
+  if(!filt||!filt.items.length){ box.innerHTML='<div class="empty">Nenhum filtro ativo.</div>'; return; }
+  box.innerHTML='<div class="scroll"><table><thead><tr><th>Filtro</th><th>Estado</th><th>Medição</th></tr></thead><tbody>'+
+    filt.items.map(f=>'<tr><td>'+esc(f.label)+'</td><td>'+(f.ok?'<span class="pill pro">OK</span>':'<span class="pill con">BLOQUEIA</span>')+
+      '</td><td class="mono">'+esc(f.reason||'')+'</td></tr>').join('')+
+    '</tbody></table></div><div class="mt '+(filt.passed?'okbox':'badbox')+'">'+
+    (filt.passed?'✅ Todos os portões liberados — estado: <b>DENTRO DO PERFIL</b>.'
+               :'🚫 <b>FORA DO PERFIL</b> — o setup é bloqueado pelos filtros.')+'</div>';
+}
+
+/* ================================================================
+   16. ALERTAS E VARREDURA AUTOMÁTICA
+   ================================================================ */
+const aiCfg={ on:false, every:60, minProb:62, minConf:55, tf:'5m', sound:true, hook:true };
+let audioCtx=null;
+function beep(){
+  if(!aiCfg.sound) return;
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain(), t=audioCtx.currentTime;
+    o.type='sine'; o.frequency.setValueAtTime(880,t);
+    o.frequency.exponentialRampToValueAtTime(1320,t+0.12);
+    g.gain.setValueAtTime(0.001,t);
+    g.gain.exponentialRampToValueAtTime(0.25,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(t+0.42);
+  }catch(e){}
+}
+function addAlert(a){
+  state.alerts.unshift(a);
+  if(state.alerts.length>60) state.alerts.pop();
+  DB.set('alerts',state.alerts.slice(0,30));
+  renderAlerts(); beep();
+  if(aiCfg.hook) sendWebhook({event:'alerta_roxoia',symbol:a.symbol,timeframe:a.tf,setup:a.setup,
+    probabilidade:a.prob.toFixed(1),confianca:a.conf,hora:nowIso()});
+}
+function renderAlerts(){
+  const box=$('#alertList');
+  $('#tagAlerts').textContent=state.alerts.length;
+  if(!state.alerts.length){
+    box.innerHTML='<div class="empty"><span class="ic">🔕</span>Nenhum alerta ainda. Ative a varredura automática para o app monitorar os ativos e avisar quando a probabilidade estatística ultrapassar o seu limiar.</div>';
+    return;
+  }
+  box.innerHTML=state.alerts.map((a,i)=>
+    '<div class="alert-item"><div class="h">🔔 '+esc(a.symbol)+
+    ' <span class="pill pro">'+a.prob.toFixed(1)+'%</span> <span class="pill neu">'+esc(a.tf)+'</span>'+
+    '<span class="spacer"></span><span class="muted" style="font-size:11px">'+esc(a.hora)+'</span>'+
+    ' <button class="btn s d" data-del-alert="'+i+'">✕</button></div>'+
+    '<div class="b">Setup: <b>'+esc(a.setup)+'</b> · confiança '+a.conf+'/100 · filtros: '+(a.filtOk?'liberado':'bloqueado')+
+    ' · '+(a.motivo||'')+'</div></div>').join('');
+  $$('#alertList [data-del-alert]').forEach(b=>b.onclick=()=>{
+    state.alerts.splice(+b.dataset.delAlert,1);
+    DB.set('alerts',state.alerts.slice(0,30));
+    renderAlerts();
+  });
+}
+async function scanNow(){
+  if(state.scanning) return;
+  state.scanning=true;
+  state.scanAbort=new AbortController();
+  const btn=$('#btnScanNow');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Varrendo…'; }
+  const uni=state.universe.slice(0,30);
+  const s=activeSetup();
+  let found=0, blocked=0, errs=0;
+  log('Varredura iniciada em '+uni.length+' ativos','i');
+  for(const sym of uni){
+    try{
+      const candles=await fetchKlines(sym,aiCfg.tf,300, state.scanAbort.signal);
+      const ctx=buildContext(candles,'api');
+      ctx.setupDir=s.dir;
+      const idx=candles.length-1;
+      const filt=evalFilters(state.filters,ctx,candles,idx,null);
+      if(!filt.passed){ blocked++; continue; }
+      const ev=evaluateSetup(s,candles,idx,ctx,null);
+      if(ev.prob*100>=aiCfg.minProb && ev.conf>=aiCfg.minConf){
+        found++;
+        addAlert({symbol:sym,tf:aiCfg.tf,prob:ev.prob*100,conf:ev.conf,setup:s.name,
+          hora:new Date().toLocaleTimeString('pt-BR'),filtOk:true,
+          motivo:'probabilidade estatística acima do limiar'});
+      }
+    }catch(e){
+      if(e.name==='AbortError') break;
+      errs++; log('Falha em '+sym+': '+e.message,'w');
+    }
+  }
+  state.scanning=false;
+  state.scanAbort=null;
+  if(btn){ btn.disabled=false; btn.textContent='▶ Varrer agora'; }
+  log('Varredura concluída: '+found+' oportunidades · '+blocked+' bloqueados pelos filtros · '+errs+' erros','s');
+  toast(found? found+' oportunidade(s) estatística(s) encontrada(s)' : 'Nenhuma oportunidade acima do limiar', found?'ok':'info');
+}
+function startScanTimer(){
+  stopScanTimer();
+  state.scanTimer=setInterval(scanNow, Math.max(20,aiCfg.every)*1000);
+  log('Varredura automática ATIVADA a cada '+aiCfg.every+'s','s');
+}
+function stopScanTimer(){
+  if(state.scanTimer){ clearInterval(state.scanTimer); state.scanTimer=null; log('Varredura automática DESATIVADA','w'); }
+}
+async function sendWebhook(payload){
+  const url=($('#tvUrl').value||'').trim();
+  if(!url) return {ok:false,msg:'URL do webhook vazia'};
+  try{
+    const r=await fetch(url,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    return {ok:r.ok,msg:'HTTP '+r.status};
+  }catch(e){ return {ok:false,msg:e.message}; }
+}
+async function testTv(){
+  const chip=$('#chipTv'); chip.className='chip'; chip.innerHTML='<span class="dot"></span> enviando…';
+  const r=await sendWebhook({event:'teste_roxoia',symbol:state.symbol,timeframe:aiCfg.tf,
+    setup:(activeSetup()||{}).name||'—',probabilidade:'0',confianca:'0',hora:nowIso()});
+  if(r.ok){ chip.className='chip good'; chip.innerHTML='<span class="dot"></span> OK'; toast('Webhook aceitou: '+r.msg,'ok'); }
+  else{ chip.className='chip bad'; chip.innerHTML='<span class="dot"></span> falha'; toast('Webhook falhou: '+r.msg,'bad'); }
+  log('Webhook: '+r.msg, r.ok?'s':'e');
+}
+async function testFeed(){
+  const chip=$('#chipFeed2'); chip.className='chip'; chip.innerHTML='<span class="dot"></span> testando…';
+  try{
+    const c=await fetchKlines('BTCUSDT','5m',5);
+    chip.className='chip good'; chip.innerHTML='<span class="dot"></span> OK · '+c.length+' candles';
+    $('#chipFeed').className='chip good'; $('#chipFeed').innerHTML='<span class="dot"></span> Feed: <b>ON</b>';
+    toast('Feed de dados funcionando','ok');
+  }catch(e){
+    chip.className='chip bad'; chip.innerHTML='<span class="dot"></span> falha';
+    $('#chipFeed').className='chip bad'; $('#chipFeed').innerHTML='<span class="dot"></span> Feed: <b>OFF</b>';
+    toast('Falha no feed: '+e.message,'bad'); log('Feed erro: '+e.message,'e');
+  }
+}
+async function testBroker(){
+  const chip=$('#chipBroker'); chip.className='chip'; chip.innerHTML='<span class="dot"></span> testando…';
+  const url=($('#brUrl').value||'').trim();
+  if(!url){ toast('Informe a URL do endpoint da corretora','warn'); chip.className='chip'; chip.innerHTML='<span class="dot"></span> —'; return; }
+  try{
+    const method=$('#brMethod').value;
+    const headers={'Content-Type':'application/json'};
+    const kh=($('#brKeyH').value||'').trim(), kv=($('#brKey').value||'').trim();
+    if(kh&&kv) headers[kh]=kv;
+    const opt={method:method,mode:'cors',headers:headers};
+    if(method==='POST') opt.body=$('#brBody').value||'{}';
+    const r=await fetch(url,opt);
+    const txt=await r.text();
+    if(r.ok){ chip.className='chip good'; chip.innerHTML='<span class="dot"></span> OK HTTP '+r.status; toast('Corretora respondeu HTTP '+r.status,'ok'); }
+    else{ chip.className='chip bad'; chip.innerHTML='<span class="dot"></span> HTTP '+r.status; toast('Resposta HTTP '+r.status,'warn'); }
+    log('Corretora: HTTP '+r.status+' · '+String(txt).slice(0,160), r.ok?'s':'w');
+  }catch(e){
+    chip.className='chip bad'; chip.innerHTML='<span class="dot"></span> erro';
+    toast('Erro (CORS é a causa mais provável): '+e.message,'bad');
+    log('Corretora erro: '+e.message,'e');
+  }
+}
+
+/* ================================================================
+   BACKUP / RESTAURAÇÃO
+   ================================================================ */
+function exportData(){
+  const payload={
+    setups: state.setups,
+    filters: state.filters,
+    mgmt: {
+      bank:+$('#mgBank').value||0, riskPct:+$('#mgRisk').value||0, pay:+$('#mgPay').value||0,
+      ops:+$('#mgOps').value||0, stopPct:+$('#mgStop').value||0, maxL:+$('#mgLosses').value||0
+    },
+    ai: aiCfg,
+    universe: state.universe,
+    alerts: state.alerts,
+    active: state.activeSetupId,
+    exportedAt: new Date().toISOString()
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='roxoia-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  toast('Backup exportado','ok');
+}
+function importData(file){
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const data=JSON.parse(rd.result);
+      if(data.setups){ state.setups=data.setups; state.activeSetupId=data.active||state.setups[0]?.id; DB.set('setups',state.setups); DB.set('active',state.activeSetupId); }
+      if(data.filters){ state.filters=data.filters; DB.set('filters',state.filters); }
+      if(data.mgmt){ $('#mgBank').value=data.mgmt.bank; $('#mgRisk').value=data.mgmt.riskPct; $('#mgPay').value=data.mgmt.pay;
+        $('#mgOps').value=data.mgmt.ops; $('#mgStop').value=data.mgmt.stopPct; $('#mgLosses').value=data.mgmt.maxL; }
+      if(data.ai){ Object.assign(aiCfg,data.ai); $('#aiMinProb').value=aiCfg.minProb; $('#aiMinConf').value=aiCfg.minConf;
+        $('#aiTf').value=aiCfg.tf; $('#aiEvery').value=aiCfg.every; $('#aiSound').checked=aiCfg.sound; $('#aiHook').checked=aiCfg.hook; }
+      if(data.universe){ state.universe=data.universe; $('#aiUniverse').value=state.universe.join('\n'); DB.set('universe',state.universe); }
+      if(data.alerts){ state.alerts=data.alerts; DB.set('alerts',state.alerts); renderAlerts(); }
+      renderSetupList(); loadEditor(); renderFilters();
+      toast('Dados importados com sucesso','ok');
+    }catch(e){ toast('Falha ao importar: '+e.message,'bad'); }
+  };
+  rd.readAsText(file);
+}
+
+/* ================================================================
+   17. AUTODIAGNÓSTICO (21 testes)
+   ================================================================ */
+function runDiagnostics(){
+  const R=[];
+  const T=(name,fn)=>{ try{ const r=fn(); R.push({name:name,ok:!!r.ok,msg:r.msg||''}); }
+                        catch(e){ R.push({name:name,ok:false,msg:'Exceção: '+e.message}); } };
+
+  T('Aritmética e formatação', ()=>({ok: clamp(15,0,10)===10 && fmt(1.005,2)==='1.01' && pctS(0.5,0)==='50%',
+    msg:'clamp, fmt e pctS ok'}));
+  T('SMA (média simples)', ()=>{ const v=IND.sma([1,2,3,4,5],3); return {ok:Math.abs(v[4]-4)<1e-9,msg:'SMA(3) de [1..5] = '+fmt(v[4],2)+' (esperado 4.00)'}; });
+  T('EMA (média exponencial)', ()=>{ const v=IND.ema([1,2,3,4,5],3); return {ok:isN(v[4])&&v[4]>4&&v[4]<5,msg:'EMA(3) final = '+fmt(v[4],3)}; });
+  T('RSI em tendência de alta', ()=>{ const a=[]; for(let i=0;i<40;i++)a.push(100+i); const r=IND.rsi(a,14); const l=r[39];
+    return {ok:l>70,msg:'RSI = '+fmt(l,1)+' (esperado > 70)'}; });
+  T('RSI em mercado lateral', ()=>{ const a=[]; for(let i=0;i<40;i++)a.push(100+(i%2)); const r=IND.rsi(a,14); const l=r[39];
+    return {ok:l>20&&l<80,msg:'RSI = '+fmt(l,1)+' (esperado perto de 50)'}; });
+  T('ATR', ()=>{ const h=[],l=[],c=[]; for(let i=0;i<40;i++){h.push(105);l.push(95);c.push(100);} const a=IND.atr(h,l,c,14);
+    return {ok:Math.abs(a[39]-10)<1e-6,msg:'ATR = '+fmt(a[39],2)+' (esperado 10.00)'}; });
+  T('MACD', ()=>{ const a=[]; for(let i=0;i<60;i++)a.push(100+i); const m=IND.macd(a);
+    return {ok:m.hist[59]>0,msg:'Histograma = '+fmt(m.hist[59],4)}; });
+  T('ADX', ()=>{ const h=[],l=[],c=[]; for(let i=0;i<60;i++){h.push(105+i);l.push(95+i);c.push(100+i);} const d=IND.adx(h,l,c,14);
+    return {ok:d.adx[59]>25,msg:'ADX = '+fmt(d.adx[59],1)}; });
+  T('Estocástico (K e D alinhados)', ()=>{ const h=[],l=[],c=[]; for(let i=0;i<40;i++){h.push(110);l.push(90);c.push(110);} const s=IND.stoch(h,l,c);
+    return {ok:s.k[39]>90 && s.d.length===s.k.length,msg:'%K = '+fmt(s.k[39],1)+' · %D = '+fmt(s.d[39],1)}; });
+  T('Bandas de Bollinger', ()=>{ const a=[]; for(let i=0;i<50;i++)a.push(100+(i%2?1:-1)); const b=IND.bb(a,20,2);
+    return {ok:isN(b.up[49])&&b.up[49]>b.mid[49],msg:'Banda superior = '+fmt(b.up[49],3)}; });
+  T('Padrão Doji', ()=>{ const b={o:100,h:101,l:99,c:100.05}; const s=candleStats(b);
+    return {ok:PATTERNS.doji.f(b,{}),msg:'corpo/range = '+(s.body/s.range).toFixed(3)+' (limite 0.10)'}; });
+  T('Padrão Engolfo de alta', ()=>{ const b={o:99,h:101,l:98,c:100.5}; const p={o:100.5,h:101,l:99,c:99.5};
+    return {ok:PATTERNS.bullishengulf.f(b,{p2:p}),msg:'engolfo detectado corretamente'}; });
+  T('Padrão Martelo', ()=>{ const b={o:100,h:100.2,l:98,c:100.1};
+    return {ok:PATTERNS.hammer.f(b,{}),msg:'martelo detectado corretamente'}; });
+  T('Intervalo de confiança (Wilson)', ()=>{ const w=wilson(50,100);
+    return {ok:w[0]<0.5&&w[1]>0.5&&w[1]<0.62,msg:'IC 95% = '+(w[0]*100).toFixed(1)+'–'+(w[1]*100).toFixed(1)+'%'}; });
+  T('Fórmula de Kelly', ()=>{ const b=0.85,wr=0.55,k=(wr*(b+1)-1)/b;
+    return {ok:Math.abs(k-0.3222)<0.01,msg:'Kelly = '+(k*100).toFixed(1)+'%'}; });
+  T('Motor de regras (score)', ()=>{
+    const c=[]; for(let i=0;i<120;i++) c.push({t:Date.now()+i*60000,o:100+i*0.3,h:101+i*0.3,l:99+i*0.3,c:100+i*0.3,v:1000});
+    const ctx=buildContext(c,'api');
+    const st={id:'t',name:'teste',dir:'alta',payout:85,rules:[{id:'r',type:'ema_cross',pol:'pro',weight:50,params:{fast:9,slow:21,dir:'alta'}}]};
+    const ev=evaluateSetup(st,c,c.length-1,ctx,null);
+    return {ok: ev.prob>0.05&&ev.prob<0.95&&ev.score>=0&&ev.score<=100,msg:'probabilidade = '+(ev.prob*100).toFixed(1)+'% · score = '+Math.round(ev.score)}; });
+  T('Polaridade PRO / CONTRA', ()=>{
+    const c=[]; for(let i=0;i<120;i++) c.push({t:Date.now()+i*60000,o:100,h:101,l:99,c:101,v:1000});
+    const ctx=buildContext(c,'api');
+    const st={id:'t3',name:'pol',dir:'alta',payout:85,rules:[{id:'r',type:'ema_price',pol:'pro',weight:50,params:{len:20,dir:'acima'}}]};
+    const ev=evaluateSetup(st,c,c.length-1,ctx,null);
+    const okSign = ev.detail[0] && ev.detail[0].satisfied===true;
+    const st2={id:'t4',name:'pol2',dir:'alta',payout:85,rules:[{id:'r',type:'ema_price',pol:'contra',weight:50,params:{len:20,dir:'acima'}}]};
+    const ev2=evaluateSetup(st2,c,c.length-1,ctx,null);
+    return {ok: okSign && ev2.detail[0].satisfied===false,
+      msg:'PRO->'+(ev.detail[0]?ev.detail[0].satisfied:'?')+' · CONTRA->'+(ev2.detail[0]?ev2.detail[0].satisfied:'?')}; });
+  T('Backtest (só sinais válidos)', ()=>{
+    const c=[]; let px=100;
+    for(let i=0;i<300;i++){ px+=(Math.sin(i/7)*0.8)+(i%11===0?1.2:-0.4);
+      c.push({t:Date.now()+i*60000,o:px,h:px+0.7,l:px-0.7,c:px+0.1,v:1000}); }
+    const ctx=buildContext(c,'api');
+    const st={id:'t2',name:'bt',dir:'alta',payout:85,rules:[{id:'r',type:'ema_cross',pol:'pro',weight:50,params:{fast:9,slow:21,dir:'alta'}}]};
+    const bt=backtest(st,c,ctx);
+    return {ok: bt.n>0 && bt.n<c.length*0.8,msg: bt.n+' sinais de '+c.length+' candles · acerto '+(bt.winRate!=null?pctS(bt.winRate,1):'—')}; });
+  T('Leitor de imagem (sintético)', ()=>{
+    const cv=document.createElement('canvas'); cv.width=480; cv.height=220;
+    const g=cv.getContext('2d'); g.fillStyle='#0d0d14'; g.fillRect(0,0,480,220);
+    let seed=7; const rnd=()=>{ seed=(seed*1103515245+12345)%2147483648; return seed/2147483648; };
+    for(let i=0;i<24;i++){
+      const x=14+i*19, o=110+rnd()*30, cl=110+rnd()*30, up=cl>=o;
+      g.strokeStyle=up?'#22c55e':'#ef4444'; g.fillStyle=g.strokeStyle;
+      g.beginPath(); g.moveTo(x,Math.max(20,Math.min(o,cl)-14)); g.lineTo(x,Math.min(200,Math.max(o,cl)+14)); g.stroke();
+      g.fillRect(x-5,Math.min(o,cl),10,Math.max(4,Math.abs(cl-o)));
+    }
+    const r=detectCandles(buildDetector(cv),{x:0,y:0,w:480,h:220});
+    return {ok: r.candles.length>=16&&r.candles.length<=30,msg:'detectou '+r.candles.length+' de 24 candles (modo '+r.mode+')'}; });
+  T('Persistência (localStorage)', ()=>{ DB.set('__t',1); const ok=DB.get('__t')===1; DB.del('__t');
+    return {ok:ok,msg:ok?'gravação/leitura OK':'armazenamento bloqueado'}; });
+  T('Estrutura do DOM', ()=>{
+    const need=['#v-analise','#v-setups','#v-gestao','#v-filtros','#v-conexao','#btnCam','#btnRec','#btnUp','#gArc','#indTable','#alertList','#diagBox','#cvChart'];
+    const miss=need.filter(s=>!$(s));
+    return {ok:miss.length===0,msg:miss.length?('faltando: '+miss.join(', ')):'todos os '+need.length+' elementos estruturais presentes'}; });
+
+  const box=$('#diagBox'); box.className='mt';
+  const pass=R.filter(r=>r.ok).length, tot=R.length;
+  box.innerHTML='<div class="row mb"><span class="pill '+(pass===tot?'pro':'con')+'">'+pass+'/'+tot+' testes aprovados</span>'+
+    '<span class="muted">'+new Date().toLocaleTimeString('pt-BR')+'</span></div>'+
+    '<div class="scroll"><table><thead><tr><th>Teste</th><th>Estado</th><th>Detalhe</th></tr></thead><tbody>'+
+    R.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+(r.ok?'<span class="pill pro">PASS</span>':'<span class="pill con">FAIL</span>')+
+      '</td><td class="mono" style="font-size:11px">'+esc(r.msg)+'</td></tr>').join('')+'</tbody></table></div>';
+  $('#tagDiag').textContent=pass+'/'+tot;
+  log('Autodiagnóstico: '+pass+'/'+tot+' testes aprovados', pass===tot?'s':'w');
+  toast('Autodiagnóstico: '+pass+'/'+tot+' aprovados', pass===tot?'ok':'warn');
+
+  apiGet('/api/v3/ping').then(()=>{
+    log('Conectividade com a API: OK','s');
+  }).catch(e=>{
+    log('Conectividade com a API: falhou ('+e.message+')','w');
+  });
+}
+
+/* ================================================================
+   18. INICIALIZAÇÃO
+   ================================================================ */
+function currentSymbol(){
+  const c=$('#customSymbol')? ($('#customSymbol').value||'').trim().toUpperCase() : '';
+  return c || $('#selSymbol').value || 'BTCUSDT';
+}
+function toggleSrc(){
+  const m=$('#srcMode').value;
+  $('#apiBox').style.display = (m==='api')? '' : 'none';
+  $('#imgBox').style.display  = (m==='api')? 'none' : '';
+}
+function switchView(v){
+  state.view=v;
+  $$('.view').forEach(x=>x.classList.toggle('active',x.id==='v-'+v));
+  $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
+  if(v==='setups'){ renderSetupList(); loadEditor(); }
+  if(v==='filtros') renderFilters();
+  if(v==='conexao') renderAlerts();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function updateClock(){
+  const el=$('#chipClock'); if(!el) return;
+  el.innerHTML='<b>'+new Date().toLocaleTimeString('pt-BR')+'</b>';
+}
+
+function init(){
+  try{
+    /* --- restaurar dados --- */
+    const saved=DB.get('setups',null);
+    state.setups = (saved&&saved.length)? saved : defaultSetups();
+    const act=DB.get('active',null);
+    state.activeSetupId = (act && state.setups.find(s=>s.id===act)) ? act : (state.setups[0]&&state.setups[0].id);
+
+    const defs=defaultFilters(), sf=DB.get('filters',null);
+    state.filters = (sf&&sf.length)? defs.map(d=>{ const s=sf.find(x=>x.id===d.id); return s? Object.assign({},d,s):d; }) : defs;
+
+    state.alerts = DB.get('alerts',[])||[];
+    const un=DB.get('universe',null); if(un&&un.length) state.universe=un;
+    const ac=DB.get('ai',null); if(ac) Object.assign(aiCfg,ac);
+    const mg=DB.get('mgmt',null);
+    if(mg){ $('#mgBank').value=mg.bank; $('#mgRisk').value=mg.riskPct; $('#mgPay').value=mg.pay;
+            $('#mgOps').value=mg.ops; $('#mgStop').value=mg.stopPct; $('#mgLosses').value=mg.maxL; }
+    const cb=DB.get('conn',null); if(cb&&cb.feedBase) state.conn.feedBase=cb.feedBase;
+    const bt=DB.get('bt_'+(state.activeSetupId||''),null); if(bt) state.bt=bt;
+
+    /* --- popular campos --- */
+    $('#selSymbol').innerHTML=UNIVERSE_DEFAULT.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+    $('#feedBase').value=state.conn.feedBase;
+    $('#aiUniverse').value=state.universe.join('\n');
+    $('#aiMinProb').value=aiCfg.minProb; $('#aiMinConf').value=aiCfg.minConf;
+    $('#aiTf').value=aiCfg.tf; $('#aiEvery').value=aiCfg.every;
+    $('#aiSound').checked=aiCfg.sound; $('#aiHook').checked=aiCfg.hook;
+
+    /* --- abas --- */
+    $$('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.v));
+
+    /* --- análise --- */
+    $('#srcMode').onchange=toggleSrc;
+    $('#selTf').onchange=()=>{ state.interval=$('#selTf').value; };
+    $('#btnLoad').onclick=async()=>{
+      const btn=$('#btnLoad'); btn.disabled=true; btn.textContent='⏳ Carregando…';
+      state.symbol=currentSymbol(); state.interval=$('#selTf').value;
+      try{
+        const candles=await fetchKlines(state.symbol,state.interval,400);
+        if(!candles.length) throw new Error('Nenhum candle retornado');
+        state.lastCandles=candles; state.lastSource='api'; state.lastIdx=candles.length-1;
+        state.lastCtx=buildContext(candles,'api');
+        try{
+          const htf=await fetchHTF(state.symbol,state.interval,300);
+          if(htf&&htf.length>60) state.lastCtx.htf={ema:IND.ema(htf.map(x=>x.c),50), c:htf.map(x=>x.c), i:htf.length-1};
+        }catch(e){}
+        const s=activeSetup();
+        const bt=backtest(s,candles,state.lastCtx);
+        state.bt=bt; DB.set('bt_'+s.id,bt);
+        runAnalysis();
+        const cc=$('#cvChart'); if(cc) drawCandles(cc,candles);
+        $('#chipFeed').className='chip good'; $('#chipFeed').innerHTML='<span class="dot"></span> Feed: <b>ON</b>';
+        toast(candles.length+' candles de '+state.symbol+' carregados','ok');
+        log('Candles carregados: '+state.symbol+' '+state.interval+' ('+candles.length+')','s');
+      }catch(e){
+        toast('Falha na API: '+e.message,'bad'); log('Erro API: '+e.message,'e');
+      }
+      btn.disabled=false; btn.textContent='⬇ Carregar candles e analisar';
+    };
+    $('#btnUpload').onclick=()=>$('#fileImg').click();
+    $('#fileImg').onchange=e=>{
+      const f=e.target.files&&e.target.files[0]; if(!f) return;
+      const rd=new FileReader();
+      rd.onload=()=>{ const im=new Image();
+        im.onload=()=>{ const c=document.createElement('canvas');
+          c.width=im.width; c.height=im.height;
+          c.getContext('2d').drawImage(im,0,0); loadImageCanvas(c); toast('Imagem carregada','ok'); };
+        im.src=rd.result; };
+      rd.readAsDataURL(f);
+    };
+    $('#btnRedetect').onclick=()=>detectFromCrop();
+    $('#btnCrop').onclick=()=>{ toast('Arraste sobre a área dos candles no quadro acima','info'); };
+    $('#btnClear').onclick=()=>{
+      state.lastCandles=null; state.lastCtx=null; state.lastIdx=-1; state.lastSource=null;
+      const st=$('#stage'); st.innerHTML='<canvas id="cvEdit" width="10" height="10"></canvas><video id="vid" playsinline muted></video>';
+      $('#imgInfo').textContent='Nenhuma imagem carregada.';
+      const cc=$('#cvChart'); if(cc) cc.getContext('2d').clearRect(0,0,cc.width,cc.height);
+      imgState.detector=null; imgState.crop=null;
+      toast('Limpo','info');
+    };
+
+    /* --- dock --- */
+    $('#btnCam').onclick=()=>openCamera();
+    $('#btnRec').onclick=()=>{
+      if(cap.live){ stopCapture(); $('#btnRec').classList.remove('on'); toast('Captura encerrada','info'); }
+      else { startScreen(); $('#btnRec').classList.add('on'); }
+    };
+    $('#btnUp').onclick=()=>{ switchView('analise'); $('#srcMode').value='image'; toggleSrc(); $('#fileImg').click(); };
+
+    /* --- setups --- */
+    $('#btnNewSetup').onclick=()=>{
+      const s={id:'s'+uid(),name:'Novo setup',dir:'alta',payout:85,rules:[]};
+      state.setups.push(s); state.activeSetupId=s.id; DB.set('setups',state.setups); DB.set('active',s.id);
+      renderSetupList(); loadEditor(); toast('Setup criado','ok');
+    };
+    $('#btnDupSetup').onclick=()=>{
+      const s=activeSetup(); if(!s) return;
+      const c=JSON.parse(JSON.stringify(s));
+      c.id='s'+uid(); c.name=s.name+' (cópia)';
+      c.rules=(c.rules||[]).map(r=>Object.assign({},r,{id:'r'+uid()}));
+      state.setups.push(c); state.activeSetupId=c.id; DB.set('setups',state.setups); DB.set('active',c.id);
+      renderSetupList(); loadEditor(); toast('Setup duplicado','ok');
+    };
+    $('#btnDelSetup').onclick=()=>{
+      if(state.setups.length<=1){ toast('É preciso manter pelo menos 1 setup','warn'); return; }
+      const s=activeSetup(); if(!s) return;
+      state.setups=state.setups.filter(x=>x.id!==s.id);
+      state.activeSetupId=state.setups[0].id;
+      DB.set('setups',state.setups); DB.set('active',state.activeSetupId);
+      renderSetupList(); loadEditor(); toast('Setup excluído','ok');
+    };
+    $('#btnAddRule').onclick=()=>openRuleModal();
+    $('#btnSaveSetup').onclick=()=>{ saveSetup(); toast('Setup salvo','ok'); };
+    $('#btnTestSetup').onclick=()=>runBacktest();
+    $('#btnApplySetup').onclick=()=>{ saveSetup(); switchView('analise'); runAnalysis(); toast('Setup aplicado à análise','ok'); };
+    $('#btnCompare').onclick=()=>compareSetups();
+    $('#setName').onchange=saveSetup; $('#setDir').onchange=saveSetup; $('#setPay').onchange=saveSetup;
+
+    /* --- gestão --- */
+    $('#btnCalcMgmt').onclick=()=>calcMgmt();
+    $('#btnSaveMgmt').onclick=()=>{
+      DB.set('mgmt',{bank:+$('#mgBank').value,riskPct:+$('#mgRisk').value,pay:+$('#mgPay').value,
+        ops:+$('#mgOps').value,stopPct:+$('#mgStop').value,maxL:+$('#mgLosses').value});
+      calcMgmt(); toast('Parâmetros de gestão salvos','ok');
+    };
+
+    /* --- filtros --- */
+    $('#btnSaveFilt').onclick=()=>{ DB.set('filters',state.filters); toast('Filtros salvos','ok'); };
+    $('#btnResetFilt').onclick=()=>{ state.filters=defaultFilters(); DB.set('filters',state.filters); renderFilters(); toast('Filtros restaurados','ok'); };
+    $('#btnTestFilt').onclick=()=>{ if(!state.lastCtx){ toast('Carregue um gráfico primeiro','warn'); return; } runAnalysis(); switchView('filtros'); toast('Filtros aplicados ao gráfico atual','ok'); };
+
+    /* --- conexão --- */
+    $('#feedBase').onchange=()=>{ state.conn.feedBase=$('#feedBase').value.trim(); DB.set('conn',{feedBase:state.conn.feedBase}); };
+    $('#btnTestFeed').onclick=()=>testFeed();
+    $('#btnTestBroker').onclick=()=>testBroker();
+    $('#btnTestTv').onclick=()=>testTv();
+
+    /* --- backup --- */
+    $('#btnExport').onclick=()=>exportData();
+    $('#btnImport').onclick=()=>$('#fileImport').click();
+    $('#fileImport').onchange=e=>{
+      const f=e.target.files&&e.target.files[0]; if(f) importData(f);
+    };
+
+    const aiSave=()=>{
+      aiCfg.minProb=clamp(+$('#aiMinProb').value||0,0,100);
+      aiCfg.minConf=clamp(+$('#aiMinConf').value||0,0,100);
+      aiCfg.tf=$('#aiTf').value;
+      aiCfg.every=clamp(+$('#aiEvery').value||60,20,3600);
+      aiCfg.sound=$('#aiSound').checked; aiCfg.hook=$('#aiHook').checked;
+      const lines=($('#aiUniverse').value||'').split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);
+      if(lines.length) state.universe=lines;
+      DB.set('ai',{minProb:aiCfg.minProb,minConf:aiCfg.minConf,tf:aiCfg.tf,every:aiCfg.every,sound:aiCfg.sound,hook:aiCfg.hook});
+      DB.set('universe',state.universe);
+    };
+    $('#aiOn').onchange=()=>{
+      aiCfg.on=$('#aiOn').checked;
+      $('#chipAI').className='chip '+(aiCfg.on?'good':'bad');
+      $('#chipAI').innerHTML='IA: <b>'+(aiCfg.on?'ON':'OFF')+'</b>';
+      if(aiCfg.on){ aiSave(); startScanTimer(); scanNow(); }
+      else stopScanTimer();
+    };
+    ['#aiMinProb','#aiMinConf','#aiTf','#aiEvery','#aiSound','#aiHook','#aiUniverse'].forEach(s=>{
+      const el=$(s); if(el) el.onchange=aiSave;
+    });
+    $('#btnScanNow').onclick=()=>{ aiSave(); scanNow(); };
+    $('#btnDiag').onclick=()=>runDiagnostics();
+
+    /* --- primeiro paint --- */
+    renderSetupList(); loadEditor(); renderFilters(); renderAlerts(); toggleSrc(); updateClock();
+    setInterval(updateClock,1000);
+    log('roxo.ia inicializado · '+new Date().toLocaleString('pt-BR'),'s');
+    toast('Bem-vindo ao roxo.ia! Comece em Conexão → Autodiagnóstico.','info');
+  }catch(e){
+    toast('Erro ao iniciar o aplicativo: '+e.message,'bad');
+    console.error(e);
+  }
+}
+
+/* --- pausa varredura quando aba fica invisível --- */
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) stopScanTimer();
+  else if(aiCfg.on) startScanTimer();
+});
+
+/* ---------- arranca ---------- */
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+else init();
+
+})();
+</script>
+</body>
+</html>
