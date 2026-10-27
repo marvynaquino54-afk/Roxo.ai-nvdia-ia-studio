@@ -1,38 +1,198 @@
-import React, { useState, useRef } from 'react';
-import { Candle } from '../types';
-import { detectCandlesFromImage } from '../services/marketApi';
-import { X, Camera, Upload, Monitor, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useModalFocus } from '../hooks/useModalFocus';
+import { Candle, ChartVisionResult } from '../types';
+import { geminiService } from '../services/geminiService';
+import { normalizeDetectedSymbol, VISION_TIMEFRAMES } from '../services/visionReport';
+import { describeCaptureError } from '../services/capturePermissions';
+import {
+  X,
+  Camera,
+  Upload,
+  Monitor,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Layers,
+  ArrowRight,
+  ShieldCheck,
+  ShieldAlert,
+  Clipboard,
+} from 'lucide-react';
+
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const MAX_IMAGE_BYTES = 5_500_000;
+const MIN_IMAGE_WIDTH = 320;
+const MIN_IMAGE_HEIGHT = 200;
 
 interface CameraModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCandlesDetected: (candles: Candle[]) => void;
+  initialMode?: 'upload' | 'camera' | 'screen';
+  onApplyDetectedChart?: (data: {
+    symbol: string;
+    timeframe: string;
+    candles: Candle[];
+    visionReport: ChartVisionResult;
+  }) => void;
+  onCandlesDetected?: (candles: Candle[]) => void;
 }
 
-export const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCandlesDetected }) => {
+export const CameraModal: React.FC<CameraModalProps> = ({
+  isOpen,
+  onClose,
+  initialMode = 'upload',
+  onApplyDetectedChart,
+  onCandlesDetected,
+}) => {
   const [videoActive, setVideoActive] = useState(false);
-  const [detectedCount, setDetectedCount] = useState<number | null>(null);
+  const [mode, setMode] = useState<'idle' | 'camera' | 'screen' | 'analyzing' | 'result'>('idle');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<(ChartVisionResult & { candles?: Candle[] }) | null>(null);
+  const [captureError, setCaptureError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [manualSymbol, setManualSymbol] = useState('');
+  const [manualTf, setManualTf] = useState('');
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  if (!isOpen) return null;
-
-  const stopStream = () => {
+  const stopStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
     setVideoActive(false);
-  };
+  }, []);
 
   const handleClose = () => {
     stopStream();
+    setPreviewImage(null);
+    setAnalysisResult(null);
+    setManualSymbol('');
+    setManualTf('');
+    setMode('idle');
     onClose();
   };
 
-  const handleStartCamera = async () => {
+  const dialogRef = useModalFocus(isOpen, handleClose);
+
+  // Clipboard paste listener (Ctrl+V)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            processImageFile(file);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen]);
+
+  // Auto-start the capture mode requested by the caller (camera / screen)
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialMode === 'camera') {
+      handleStartCamera();
+    } else if (initialMode === 'screen') {
+      handleStartScreen();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialMode]);
+
+  if (!isOpen) return null;
+
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+      reader.readAsDataURL(file);
+    });
+
+  const measureImage = (dataUrl: string): Promise<{ width: number; height: number }> =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+      image.onerror = () => reject(new Error('Arquivo de imagem inválido ou corrompido.'));
+      image.src = dataUrl;
+    });
+
+  const processImageFile = async (file: File) => {
+    setCaptureError(null);
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setCaptureError('Formato não suportado. Envie PNG, JPEG ou WebP.');
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setCaptureError('Imagem grande demais. Envie um print de até ~5,5 MB.');
+      return;
+    }
     try {
+      const base64 = await readFileAsDataUrl(file);
+      const { width, height } = await measureImage(base64);
+      if (width < MIN_IMAGE_WIDTH || height < MIN_IMAGE_HEIGHT) {
+        setCaptureError(
+          `Resolução muito baixa (${width}×${height}). Envie um print com pelo menos ${MIN_IMAGE_WIDTH}×${MIN_IMAGE_HEIGHT} pixels e os eixos visíveis.`
+        );
+        return;
+      }
+      setPreviewImage(base64);
+      await runVisionAnalysis(base64, file.type);
+    } catch (err: any) {
+      setCaptureError(err?.message || 'Não foi possível ler a imagem.');
+    }
+  };
+
+  const runVisionAnalysis = async (base64: string, mime: string) => {
+    setMode('analyzing');
+    stopStream();
+
+    try {
+      const result = await geminiService.analyzeChartImage(base64, mime);
+      setAnalysisResult(result);
+      setManualSymbol(result.symbolDetected || '');
+      setManualTf(result.timeframeDetected || '');
+      setMode('result');
+    } catch (err: any) {
+      setAnalysisResult({
+        isValidChart: false,
+        confidence: 0,
+        symbolDetected: null,
+        timeframeDetected: null,
+        priceScaleDetected: null,
+        patternsDetected: [],
+        trendDetected: 'INDEFINIDO',
+        rejectionReason: 'Não foi possível validar esta imagem com segurança.',
+        summary: `Falha na execução: ${err.message || 'Erro inesperado'}`,
+      });
+      setManualSymbol('');
+      setManualTf('');
+      setMode('result');
+    }
+  };
+
+  const handleStartCamera = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCaptureError(describeCaptureError('camera', { name: 'SecurityError' }));
+      return;
+    }
+    try {
+      stopStream();
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 } },
         audio: false,
@@ -43,15 +203,22 @@ export const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCan
         videoRef.current.play();
       }
       setVideoActive(true);
-    } catch (err: any) {
-      alert(`Não foi possível acessar a câmera: ${err.message}`);
+      setMode('camera');
+      setCaptureError(null);
+    } catch (err) {
+      setCaptureError(describeCaptureError('camera', err));
     }
   };
 
   const handleStartScreen = async () => {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      setCaptureError(describeCaptureError('screen', { name: 'SecurityError' }));
+      return;
+    }
     try {
+      stopStream();
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: 5 } },
+        video: { frameRate: { ideal: 10 } },
         audio: false,
       });
       streamRef.current = stream;
@@ -60,8 +227,10 @@ export const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCan
         videoRef.current.play();
       }
       setVideoActive(true);
-    } catch (err: any) {
-      alert(`Captura de tela cancelada: ${err.message}`);
+      setMode('screen');
+      setCaptureError(null);
+    } catch (err) {
+      setCaptureError(describeCaptureError('screen', err));
     }
   };
 
@@ -76,68 +245,113 @@ export const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCan
     if (!ctx) return;
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const parsedCandles = detectCandlesFromImage(canvas);
+    const dataUrl = canvas.toDataURL('image/png');
+    setPreviewImage(dataUrl);
+    runVisionAnalysis(dataUrl, 'image/png');
+  };
 
-    if (parsedCandles.length >= 6) {
-      setDetectedCount(parsedCandles.length);
-      onCandlesDetected(parsedCandles);
-      setTimeout(() => {
-        handleClose();
-      }, 1200);
-    } else {
-      alert('Poucos candles identificados no enquadramento. Aponte diretamente para o gráfico com boa iluminação.');
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      processImageFile(file);
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleApply = () => {
+    if (!analysisResult || !analysisResult.isValidChart) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+    const sym = normalizeDetectedSymbol(manualSymbol);
+    const tf = manualTf;
 
-        ctx.drawImage(img, 0, 0);
-        const parsedCandles = detectCandlesFromImage(canvas);
-        if (parsedCandles.length >= 5) {
-          setDetectedCount(parsedCandles.length);
-          onCandlesDetected(parsedCandles);
-          setTimeout(() => {
-            handleClose();
-          }, 1200);
-        } else {
-          alert('Não foi possível identificar os candles na imagem. Certifique-se de que o print mostra o gráfico com nitidez.');
-        }
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
+    if (!sym || !tf) {
+      setCaptureError('Confirme o ativo e o timeframe antes de sincronizar.');
+      return;
+    }
+
+    const sameTarget = sym === analysisResult.symbolDetected && tf === analysisResult.timeframeDetected;
+    const candlesToApply = sameTarget ? analysisResult.candles || [] : [];
+
+    if (onApplyDetectedChart) {
+      onApplyDetectedChart({
+        symbol: sym,
+        timeframe: tf,
+        candles: candlesToApply,
+        visionReport: { ...analysisResult, symbolDetected: sym, timeframeDetected: tf },
+      });
+    } else if (onCandlesDetected && candlesToApply.length > 0) {
+      onCandlesDetected(candlesToApply);
+    }
+
+    handleClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#150d2f] border border-violet-500/30 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
-        <button onClick={handleClose} className="absolute top-4 right-4 text-violet-400 hover:text-white p-1">
-          <X className="w-4 h-4" />
-        </button>
-
-        <div className="space-y-1">
-          <h3 className="font-extrabold text-sm text-white uppercase tracking-wide">
-            Leitura Visual de Gráficos (OCR / Visão Computacional)
-          </h3>
-          <p className="text-xs text-violet-300/80">
-            Envie uma captura de tela da corretora ou TradingView para extrair os candles e calcular a probabilidade.
-          </p>
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="camera-modal-title"
+      tabIndex={-1}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <div className="bg-[#100924] border border-violet-500/30 rounded-2xl max-w-2xl w-full p-5 sm:p-6 space-y-4 shadow-2xl relative my-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-violet-500/20 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300">
+              <Camera className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 id="camera-modal-title" className="font-extrabold text-sm text-white uppercase tracking-wider font-mono">
+                  OCR & Reconhecimento Visual de Gráficos
+                </h3>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-mono border border-violet-500/30">
+                  GEMINI 3.6 FLASH
+                </span>
+              </div>
+              <p className="text-[11px] text-violet-300/70">
+                Auditoria de eixos, escala de preços, padrões de vela e conferência com o feed real.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            data-autofocus
+            aria-label="Fechar captura"
+            className="p-1.5 rounded-lg text-violet-400 hover:text-white hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-400"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Video or Upload Viewport */}
-        <div className="relative aspect-video bg-black/70 rounded-xl overflow-hidden border border-violet-500/30 flex items-center justify-center">
+        {captureError && (
+          <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-300 flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+            <span className="flex-1">{captureError}</span>
+            <button onClick={() => setCaptureError(null)} className="text-rose-400 hover:text-white" aria-label="Fechar aviso">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Viewport Area */}
+        <div className="relative aspect-video bg-black/80 rounded-xl overflow-hidden border border-violet-500/30 flex items-center justify-center">
+          {/* Live Video (Camera or Screen Capture) */}
           <video
             ref={videoRef}
             playsInline
@@ -145,64 +359,310 @@ export const CameraModal: React.FC<CameraModalProps> = ({ isOpen, onClose, onCan
             className={`w-full h-full object-contain ${videoActive ? 'block' : 'hidden'}`}
           />
 
-          {!videoActive && (
-            <div className="text-center p-6 space-y-3">
-              <Camera className="w-10 h-10 text-violet-400/50 mx-auto" />
-              <p className="text-xs text-violet-300/60 max-w-xs">
-                Escolha uma das opções abaixo para ler os candles via visão computacional:
+          {/* Analyzing State HUD overlay */}
+          {mode === 'analyzing' && (
+            <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center p-6 text-center z-20">
+              <div className="relative w-20 h-20 mb-4 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-2 border-violet-500/30 animate-ping" />
+                <div className="absolute inset-0 rounded-full border-2 border-t-violet-400 border-r-fuchsia-400 border-b-transparent border-l-transparent animate-spin" />
+                <Activity className="w-8 h-8 text-fuchsia-400" />
+              </div>
+              <span className="font-mono text-xs uppercase tracking-widest text-violet-200 font-bold mb-1">
+                Auditoria Visual em Execução...
+              </span>
+              <p className="text-[11px] text-violet-400/80 max-w-sm">
+                Validando legibilidade dos eixos vertical e horizontal, cotas de preço e confluências de candlestick.
               </p>
             </div>
           )}
 
-          {detectedCount !== null && (
-            <div className="absolute inset-0 bg-violet-950/90 flex flex-col items-center justify-center text-center p-4 animate-fadeIn">
-              <CheckCircle2 className="w-12 h-12 text-emerald-400 mb-2" />
-              <span className="font-bold text-white text-sm">
-                {detectedCount} Velas Detectadas com Sucesso!
-              </span>
-              <span className="text-xs text-violet-300">Carregando no terminal analítico...</span>
+          {/* Idle / Drag & Drop Dropzone */}
+          {!videoActive && mode !== 'analyzing' && !previewImage && (
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`w-full h-full flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all border-2 border-dashed ${
+                isDragging
+                  ? 'border-fuchsia-400 bg-fuchsia-950/20 scale-[0.99]'
+                  : 'border-violet-500/20 hover:border-violet-500/50 hover:bg-white/[0.02]'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 mb-3 shadow-lg">
+                <Upload className="w-6 h-6" />
+              </div>
+              <p className="text-xs font-semibold text-white mb-1">
+                Arraste um print do gráfico ou clique para selecionar
+              </p>
+              <p className="text-[10px] text-violet-400/70 max-w-xs mb-3">
+                Suporta TradingView, IQ Option, Exnova, MetaTrader 5 e Binance. Você também pode colar com{' '}
+                <kbd className="px-1 py-0.5 rounded bg-violet-950 border border-violet-500/30 text-violet-300 font-mono">
+                  Ctrl+V
+                </kbd>
+                .
+              </p>
+              <div className="flex items-center gap-2 text-[10px] text-violet-400/60">
+                <Clipboard className="w-3 h-3" />
+                <span>Colagem da área de transferência suportada</span>
+              </div>
+            </div>
+          )}
+
+          {/* Static Preview Image if not capturing live */}
+          {previewImage && !videoActive && (
+            <img
+              src={previewImage}
+              alt="Gráfico Enviado"
+              className="w-full h-full object-contain"
+            />
+          )}
+
+          {/* Live Capture Reticle when Video is active */}
+          {videoActive && (
+            <div className="absolute inset-0 pointer-events-none border border-violet-500/20 flex flex-col justify-between p-4">
+              <div className="flex justify-between items-center text-[10px] font-mono text-emerald-400/80 bg-black/60 px-2 py-1 rounded backdrop-blur-sm self-start">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block mr-1.5" />
+                SINAL DE VÍDEO ATIVO — ENQUADRE O GRÁFICO
+              </div>
+              <div className="self-center border border-dashed border-violet-400/40 w-4/5 h-3/5 rounded-lg flex items-center justify-center">
+                <span className="text-[10px] text-violet-300/60 font-mono uppercase">
+                  Área de Captura
+                </span>
+              </div>
+              <div className="text-[10px] font-mono text-violet-400/70 text-center">
+                Mantenha os eixos de preço nítidos e iluminados
+              </div>
             </div>
           )}
         </div>
 
+        {/* OCR Result Audit Card */}
+        {mode === 'result' && analysisResult && (
+          <div className="space-y-3">
+            {analysisResult.isValidChart ? (
+              <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 text-xs space-y-2.5 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span className="font-extrabold font-mono uppercase tracking-wider text-emerald-300">
+                      Gráfico Validado com Sucesso ({analysisResult.confidence}% Confiança)
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-[10px] font-mono font-bold text-emerald-300 border border-emerald-500/40">
+                    ANÁLISE VISUAL                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                  <div className="p-2 rounded-lg bg-black/40 border border-emerald-500/20">
+                    <span className="text-emerald-400/60 block text-[9px] font-mono uppercase">Ativo</span>
+                    <input
+                      value={manualSymbol}
+                      onChange={(e) =>
+                        setManualSymbol(
+                          e.target.value
+                            .toUpperCase()
+                            .replace(/[^A-Z0-9.^]/g, '')
+                            .slice(0, 12)
+                        )
+                      }
+                      placeholder="Confirme"
+                      aria-label="Ativo detectado"
+                      className="w-full bg-transparent font-bold font-mono text-white text-xs outline-none placeholder:text-emerald-400/40 border-b border-emerald-500/20 focus:border-emerald-400/60"
+                    />
+                  </div>
+                  <div className="p-2 rounded-lg bg-black/40 border border-emerald-500/20">
+                    <span className="text-emerald-400/60 block text-[9px] font-mono uppercase">Timeframe</span>
+                    <select
+                      value={manualTf}
+                      onChange={(e) => setManualTf(e.target.value)}
+                      aria-label="Timeframe detectado"
+                      className="w-full bg-[#04120a] font-bold font-mono text-white text-xs outline-none border-b border-emerald-500/20 focus:border-emerald-400/60"
+                    >
+                      <option value="">Confirme</option>
+                      {VISION_TIMEFRAMES.map((tf) => (
+                        <option key={tf} value={tf}>
+                          {tf.toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="p-2 rounded-lg bg-black/40 border border-emerald-500/20">
+                    <span className="text-emerald-400/60 block text-[9px] font-mono uppercase">Tendência</span>
+                    <span className="font-bold font-mono text-xs flex items-center gap-1">
+                      {analysisResult.trendDetected === 'ALTA' ? (
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" /> Alta
+                        </span>
+                      ) : analysisResult.trendDetected === 'BAIXA' ? (
+                        <span className="text-rose-400 flex items-center gap-1">
+                          <TrendingDown className="w-3 h-3" /> Baixa
+                        </span>
+                      ) : (
+                        <span className="text-amber-400">Lateral</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-black/40 border border-emerald-500/20">
+                    <span className="text-emerald-400/60 block text-[9px] font-mono uppercase">Eixo Preço</span>
+                    <span className="font-mono text-white text-[11px] truncate block">
+                      {analysisResult.priceScaleDetected
+                        ? `${analysisResult.priceScaleDetected.min} — ${analysisResult.priceScaleDetected.max}`
+                        : 'Eixos Nítidos'}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-emerald-400/60 font-mono leading-relaxed">
+                  Confira ou corrija o ativo/timeframe. A IA pode errar a leitura e nenhum dado é sincronizado sem estes campos.
+                </p>
+
+                {analysisResult.summary && (
+                  <p className="text-[10px] text-emerald-200/70 leading-relaxed">{analysisResult.summary}</p>
+                )}
+
+                {analysisResult.syncWarning && (
+                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[10px] text-amber-200 flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400 mt-0.5" />
+                    <span>{analysisResult.syncWarning}</span>
+                  </div>
+                )}
+
+                {/* Detected Patterns */}
+                {analysisResult.patternsDetected && analysisResult.patternsDetected.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <span className="text-[10px] text-emerald-400/80 font-mono">Padrões:</span>
+                    {analysisResult.patternsDetected.map((p, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-[10px] font-mono text-emerald-300 font-semibold"
+                      >
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Real Market Sync Guarantee */}
+                <div className="p-2 rounded-lg bg-black/50 border border-emerald-500/20 flex items-center justify-between text-[10px]">
+                  <span className="text-emerald-300/80 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    {analysisResult.syncedRealCandlesCount && analysisResult.syncedRealCandlesCount > 0
+                      ? `Sincronizado: ${analysisResult.syncedRealCandlesCount} velas reais obtidas do feed oficial (${analysisResult.syncedProvider || 'Mercado'})`
+                      : 'Nenhuma vela sintética foi gerada. As velas reais serão buscadas no terminal.'}
+                  </span>
+                  <span className="font-mono text-emerald-400 font-bold">VALIDADO PELA IA</span>
+                </div>
+              </div>
+            ) : (
+              /* Rejection Card - STRICT REQUIREMENT */
+              <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs space-y-2 animate-fadeIn">
+                <div className="flex items-center gap-2 text-rose-400">
+                  <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-extrabold font-mono text-sm tracking-wide text-rose-300">
+                    Não foi possível validar esta imagem com segurança.
+                  </span>
+                </div>
+                <p className="text-[11px] text-rose-300/80 leading-relaxed">
+                  {analysisResult.summary ||
+                    'Os eixos de cotações numéricas ou tempo estão ilegíveis, cortados ou com resolução insuficiente. Para proteger a integridade matemática, o terminal bloqueia qualquer geração de dados incertos.'}
+                </p>
+                <div className="p-2.5 rounded-lg bg-black/40 border border-rose-500/20 text-[10px] text-rose-300/70 font-mono flex items-center gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span>Dica: Capture a tela inteira da corretora incluindo o topo com o nome do par e a régua de preços à direita.</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap pt-1">
           <input
             type="file"
             ref={fileInputRef}
-            accept="image/*"
-            onChange={handleFileUpload}
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) processImageFile(file);
+              e.target.value = '';
+            }}
             className="hidden"
           />
 
-          {!videoActive ? (
+          {!videoActive && mode !== 'result' && (
             <>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:opacity-95"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
               >
                 <Upload className="w-3.5 h-3.5" /> Enviar Print do Gráfico
               </button>
               <button
                 onClick={handleStartCamera}
-                className="py-2 px-3 rounded-xl bg-white/5 border border-violet-500/20 text-violet-200 hover:bg-white/10 font-bold text-xs flex items-center justify-center gap-1.5"
+                className="py-2.5 px-3 rounded-xl bg-white/5 border border-violet-500/20 hover:bg-white/10 text-violet-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
               >
                 <Camera className="w-3.5 h-3.5" /> Câmera
               </button>
               <button
                 onClick={handleStartScreen}
-                className="py-2 px-3 rounded-xl bg-white/5 border border-violet-500/20 text-violet-200 hover:bg-white/10 font-bold text-xs flex items-center justify-center gap-1.5"
+                className="py-2.5 px-3 rounded-xl bg-white/5 border border-violet-500/20 hover:bg-white/10 text-violet-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
               >
                 <Monitor className="w-3.5 h-3.5" /> Gravar Tela
               </button>
             </>
-          ) : (
-            <button
-              onClick={handleCaptureFrame}
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg hover:opacity-95"
-            >
-              <Camera className="w-4 h-4" /> Capturar Gráfico Agora
-            </button>
+          )}
+
+          {videoActive && (
+            <div className="flex items-center gap-2 w-full">
+              <button
+                onClick={handleCaptureFrame}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
+              >
+                <Camera className="w-4 h-4" /> Congelar e Analisar Gráfico
+              </button>
+              <button
+                onClick={stopStream}
+                className="py-2.5 px-3 rounded-xl bg-white/5 border border-white/10 text-violet-300 hover:text-white text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+
+          {mode === 'result' && (
+            <div className="flex items-center gap-2 w-full">
+              <button
+                onClick={() => {
+                  setAnalysisResult(null);
+                  setPreviewImage(null);
+                  setManualSymbol('');
+                  setManualTf('');
+                  setMode('idle');
+                }}
+                className="py-2.5 px-3 rounded-xl bg-white/5 border border-violet-500/20 text-violet-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Enviar Outra Imagem
+              </button>
+
+              {analysisResult?.isValidChart ? (
+                <button
+                  onClick={handleApply}
+                  disabled={!manualSymbol || !manualTf}
+                  title={!manualSymbol || !manualTf ? 'Confirme o ativo e o timeframe para sincronizar.' : undefined}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-xl shadow-emerald-950/50 transition-all font-mono disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:from-emerald-600 disabled:hover:to-emerald-600"
+                >
+                  <ArrowRight className="w-4 h-4" /> Sincronizar e Abrir no Terminal
+                </button>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Selecionar Imagem Mais Nítida
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

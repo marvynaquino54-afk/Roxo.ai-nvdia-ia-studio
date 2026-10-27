@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { authService, DEFAULT_ADMIN } from '../services/firebase';
+import { authService } from '../services/firebase';
 import { UserProfile } from '../types';
-import { X, Lock, Mail, User, Shield, Sparkles } from 'lucide-react';
+import { useModalFocus } from '../hooks/useModalFocus';
+import { X, Lock, Mail, User } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const dialogRef = useModalFocus(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -23,34 +25,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
     e.preventDefault();
     setError('');
     if (!email || !password) {
-      setError('Preencha todos os campos obrigatórios.');
+      setError('Preencha seu e-mail e senha.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('A senha deve possuir pelo menos 6 caracteres.');
+      return;
+    }
+
+    if (isRegister && !name.trim()) {
+      setError('Informe seu nome ou apelido.');
       return;
     }
 
     setLoading(true);
     try {
-      const user = await authService.login(email, password);
+      const user = isRegister
+        ? await authService.register(name, email, password)
+        : await authService.login(email, password);
       onLoginSuccess(user);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Erro ao autenticar');
+      setError(err.message || 'Falha ao autenticar. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFillAdmin = () => {
-    setEmail(DEFAULT_ADMIN.email);
-    setPassword('admin123456');
-    setIsRegister(false);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      tabIndex={-1}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="bg-[#150d2f] border border-violet-500/30 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-violet-400 hover:text-white p-1"
+          aria-label="Fechar login"
+          className="absolute top-4 right-4 text-violet-400 hover:text-white p-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
         >
           <X className="w-4 h-4" />
         </button>
@@ -59,18 +78,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center mx-auto text-white font-black text-lg shadow-[0_0_18px_rgba(168,85,247,0.4)]">
             ◈
           </div>
-          <h3 className="font-extrabold text-base text-white tracking-wide">
+          <h3 id="auth-modal-title" className="font-extrabold text-base text-white tracking-wide">
             {isRegister ? 'Criar Conta no roxo.ia' : 'Acessar Terminal roxo.ia'}
           </h3>
           <p className="text-xs text-violet-300/70">
             {isRegister
-              ? 'Sincronize seus setups e histórico em qualquer dispositivo'
-              : 'Entre com seu e-mail para carregar seus setups na nuvem'}
+              ? 'Seus setups e histórico ficam salvos apenas neste navegador'
+              : 'Entre com seu e-mail e senha (validação local neste navegador)'}
           </p>
         </div>
 
         {error && (
-          <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs text-center font-medium">
+          <div role="alert" className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs text-center font-medium">
             {error}
           </div>
         )}
@@ -78,11 +97,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
         <form onSubmit={handleSubmit} className="space-y-3 text-xs">
           {isRegister && (
             <div>
-              <label className="text-[10px] font-bold text-violet-400 uppercase block mb-1">Seu Nome / Apelido</label>
+              <label htmlFor="auth-name" className="text-[10px] font-bold text-violet-400 uppercase block mb-1">
+                Seu Nome / Apelido
+              </label>
               <div className="relative">
                 <User className="w-3.5 h-3.5 text-violet-400 absolute left-3 top-2.5" />
                 <input
+                  id="auth-name"
+                  data-autofocus
                   type="text"
+                  autoComplete="nickname"
                   placeholder="Seu nome"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -93,11 +117,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           )}
 
           <div>
-            <label className="text-[10px] font-bold text-violet-400 uppercase block mb-1">E-mail</label>
+            <label htmlFor="auth-email" className="text-[10px] font-bold text-violet-400 uppercase block mb-1">E-mail</label>
             <div className="relative">
               <Mail className="w-3.5 h-3.5 text-violet-400 absolute left-3 top-2.5" />
               <input
+                id="auth-email"
+                data-autofocus
                 type="email"
+                autoComplete="email"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -107,11 +134,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           </div>
 
           <div>
-            <label className="text-[10px] font-bold text-violet-400 uppercase block mb-1">Senha</label>
+            <label htmlFor="auth-password" className="text-[10px] font-bold text-violet-400 uppercase block mb-1">Senha</label>
             <div className="relative">
               <Lock className="w-3.5 h-3.5 text-violet-400 absolute left-3 top-2.5" />
               <input
+                id="auth-password"
                 type="password"
+                autoComplete={isRegister ? 'new-password' : 'current-password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -125,18 +154,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
             disabled={loading}
             className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 hover:opacity-95 text-white font-bold text-xs shadow-md transition-all disabled:opacity-50"
           >
-            {loading ? 'Entrando...' : isRegister ? 'Concluir Cadastro' : 'Entrar no Terminal'}
+            {loading ? 'Autenticando...' : isRegister ? 'Concluir Cadastro Seguro' : 'Entrar no Terminal'}
           </button>
         </form>
 
-        {/* Quick Admin Auto-fill Button */}
+        {/* Local authentication transparency */}
         <div className="pt-2 border-t border-violet-500/15">
-          <button
-            onClick={handleFillAdmin}
-            className="w-full py-2 px-3 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-300 hover:bg-amber-400/20 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-          >
-            <Shield className="w-3.5 h-3.5" /> Preencher Login do Dono (Admin)
-          </button>
+          <p className="text-[10px] text-amber-300/80 leading-relaxed">
+            <strong>Importante:</strong> este login é local. As contas e a sessão são gravadas no
+            localStorage deste navegador, sem servidor de autenticação. Não use aqui uma senha que
+            você reutiliza em outros serviços. A conta do dono começa com uma senha padrão definida
+            no código: troque-a na aba Admin após o primeiro acesso.
+          </p>
         </div>
 
         <div className="text-center text-xs text-violet-400">
